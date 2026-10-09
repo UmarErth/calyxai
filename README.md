@@ -1,17 +1,17 @@
 # Calyx AI
 
-An open-source, Claude-inspired Gemini workspace with a calm serif interface, encrypted bring-your-own-key storage, Supabase authentication, daily usage limits, Stripe subscriptions, and a permission-conscious Chrome extension.
+An open-source AI workspace with a calm serif interface, tiered Calyx intelligence profiles, encrypted bring-your-own-key storage, Supabase authentication, daily usage limits, Stripe subscriptions, and a permission-conscious Chrome extension.
 
-> Early open-source release. Connect your own Supabase, Gemini, and Stripe projects before production use.
+> Early open-source release. Connect your own Supabase, compatible model-provider, and Stripe projects before production use.
 
 ## Plans
 
 | Plan | Price | Daily messages | Highlights |
 | --- | ---: | ---: | --- |
-| Free | $0 | 50 | Gemini chat, encrypted BYOK |
-| Starter | $5/month | 500 | Longer projects, priority, exports |
-| Work | $10/month | 500 | Work canvas and Chrome extension |
-| Unlimited | $20/month | Unlimited | Every feature and highest priority |
+| Free | $0 | 50 | Calyx Core, encrypted BYOK |
+| Starter | $5/month | 500 | Calyx Focus with stronger planning |
+| Work | $10/month | 500 | Calyx Work advanced reasoning and extension |
+| Unlimited | $20/month | Unlimited | Calyx Max, deepest reasoning, every feature |
 
 Unlimited remains subject to reasonable abuse prevention and upstream provider availability. The Work extension starts with active-tab context sharing and explicit user approval; automated actions should only be added through a visible preview-and-confirm flow.
 
@@ -19,7 +19,7 @@ Unlimited remains subject to reasonable abuse prevention and upstream provider a
 
 - React, TypeScript, and Vite
 - Supabase Auth, Postgres, RLS, and Edge Functions
-- Gemini `gemini-3.8-flash` via Google’s REST API
+- Tiered server-side model routing through a compatible Google AI API key
 - Stripe Checkout and signed subscription webhooks
 - Manifest V3 Chrome extension
 
@@ -33,11 +33,11 @@ Unlimited remains subject to reasonable abuse prevention and upstream provider a
 6. Create Stripe recurring prices for $5, $10, and $20. Add their IDs as secrets and point a Stripe webhook at `stripe-webhook` for subscription created, updated, and deleted events.
 7. Run `npm run dev`.
 
-Supabase’s publishable key is designed for browser use when RLS is enabled. Gemini keys are sent to `save-gemini-key`, encrypted with AES-256-GCM, and stored as ciphertext. The encryption master key and Supabase secret key stay in Edge Function secrets.
+Supabase’s publishable key is designed for browser use when RLS is enabled. Provider keys are sent to `save-gemini-key`, encrypted with AES-256-GCM, and stored as ciphertext. The encryption master key and Supabase secret key stay in Edge Function secrets.
 
 ## Reliability prompt
 
-The system prompt lives in `supabase/functions/_shared/system-prompt.ts`. It asks Calyx to distinguish facts from inference, surface uncertainty, verify calculations, resist prompt injection, protect secrets, and never claim tool execution without evidence. Prompting improves behavior but cannot guarantee that a model will always be correct; the UI keeps that limitation visible.
+The prompt profiles live in `supabase/functions/_shared/system-prompt.ts`. Core provides the reliability baseline; Focus adds planning and constraint checks; Work adds execution, research, and technical-risk discipline; Max adds adversarial review, independent quantitative checks, and deeper decision analysis. The server selects the profile, model, and thinking level from the authenticated subscription plan. Prompting improves behavior but cannot guarantee that a model will always be correct; the UI keeps that limitation visible.
 
 ## Chrome extension
 

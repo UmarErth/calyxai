@@ -6,7 +6,7 @@ Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   try {
     const { apiKey } = await req.json()
-    if (typeof apiKey !== 'string' || !apiKey.startsWith('AIza') || apiKey.length > 256) throw new Error('Enter a valid Gemini API key.')
+    if (typeof apiKey !== 'string' || !apiKey.startsWith('AIza') || apiKey.length > 256) throw new Error('Enter a valid provider API key.')
     const { userId, admin } = await clients(req)
     const master = Deno.env.get('GEMINI_KEY_ENCRYPTION_SECRET')
     if (!master || master.length < 32) throw new Error('Server encryption is not configured.')
