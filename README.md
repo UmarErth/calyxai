@@ -1,65 +1,50 @@
-# Calyx AI
+# Calyx
 
-An open-source AI workspace with a calm serif interface, tiered Calyx intelligence profiles, encrypted bring-your-own-key storage, Supabase authentication, daily usage limits, Stripe subscriptions, and a permission-conscious Chrome extension.
+Calyx is an AI workspace designed for clear thinking, focused work, and useful action.
 
-> Early open-source release. Connect your own Supabase, compatible model-provider, and Stripe projects before production use.
+[Open Calyx](https://calyx.umarerthteam.workers.dev)
 
-## Plans
+## The product
 
-| Plan | Price | Daily messages | Highlights |
+Calyx pairs a quiet, distraction-free interface with intelligence profiles that scale from everyday questions to demanding professional work.
+
+| Plan | Price | Daily messages | Intelligence |
 | --- | ---: | ---: | --- |
-| Free | $0 | 50 | Calyx Core, encrypted BYOK |
-| Starter | $5/month | 500 | Calyx Focus with stronger planning |
-| Work | $10/month | 500 | Calyx Work advanced reasoning and extension |
-| Unlimited | $20/month | Unlimited | Calyx Max, deepest reasoning, every feature |
+| Free | $0 | 50 | Calyx Core |
+| Starter | $5/month | 500 | Calyx Focus |
+| Work | $10/month | 500 | Calyx Work |
+| Unlimited | $20/month | Unlimited | Calyx Max |
 
-Unlimited remains subject to reasonable abuse prevention and upstream provider availability. The Work extension starts with active-tab context sharing and explicit user approval; automated actions should only be added through a visible preview-and-confirm flow.
+The Work experience extends conversations into permission-based browser tasks. Calyx always keeps people in control of consequential actions.
 
-## Stack
+## Open-source surfaces
 
-- React, TypeScript, and Vite
-- Supabase Auth, Postgres, RLS, and Edge Functions
-- Tiered server-side model routing through a compatible Google AI API key
-- Stripe Checkout and signed subscription webhooks
-- Manifest V3 Chrome extension
+This repository contains the official open-source Calyx web interface and Chrome extension.
 
-## Local setup
+- `src/` — the Calyx frontend
+- `extension/` — the Calyx Work Chrome extension
 
-1. Run `npm install`.
-2. Copy `.env.example` to `.env.local`, then add your Supabase project URL and publishable key. Never use a secret or service-role key in the frontend.
-3. Create or link a Supabase project and apply `supabase/migrations/20261009000000_initial_schema.sql`.
-4. Set the Edge Function secrets shown in `supabase/functions/.env.example`. `GOOGLE_AI_STUDIO_API_KEY` is the server-only default; users may override it with an encrypted personal key. Use a random value of at least 32 characters for `GEMINI_KEY_ENCRYPTION_SECRET` and keep it backed up; changing it makes saved user keys unreadable.
-5. Deploy the four functions in `supabase/functions`.
-6. Create Stripe recurring prices for $5, $10, and $20. Add their IDs as secrets and point a Stripe webhook at `stripe-webhook` for subscription created, updated, and deleted events.
-7. Run `npm run dev`.
+The hosted service, intelligence orchestration, billing systems, operational infrastructure, and private backend are not part of this public distribution.
 
-Supabase’s publishable key is designed for browser use when RLS is enabled. Provider keys are sent to `save-gemini-key`, encrypted with AES-256-GCM, and stored as ciphertext. The encryption master key and Supabase secret key stay in Edge Function secrets.
+## Design principles
 
-## Reliability prompt
-
-The prompt profiles live in `supabase/functions/_shared/system-prompt.ts`. Core provides the reliability baseline; Focus adds planning and constraint checks; Work adds execution, research, and technical-risk discipline; Max adds adversarial review, independent quantitative checks, and deeper decision analysis. The server selects the profile, model, and thinking level from the authenticated subscription plan. Prompting improves behavior but cannot guarantee that a model will always be correct; the UI keeps that limitation visible.
+- Calm by default
+- Useful before impressive
+- Clear about uncertainty
+- Narrow permissions and visible consent
+- Accessible motion and persistent light or dark themes
+- Privacy-conscious product decisions
 
 ## Chrome extension
 
-Open `chrome://extensions`, enable Developer mode, and load the `extension` directory unpacked. See `extension/README.md` for its narrow permission model.
+Calyx Work uses narrow Manifest V3 permissions. It reads the active page only after explicit approval, keeps shared context in session storage, and clears that context when the active page changes.
 
-## Security notes
+## Security
 
-- Every exposed user-data table has RLS enabled.
-- `user_secrets` is inaccessible to browser roles.
-- Daily limits are incremented atomically in Postgres.
-- Webhook signatures are verified before subscription state changes.
-- No real credentials belong in Git. Environment files are ignored.
-- Before production, restrict CORS to the deployed origin and add abuse monitoring, retention controls, and a key-rotation flow.
-
-## Contact
-
-Support email coming soon. Replace this section when the project’s public support address is chosen.
-
-## Contributing
-
-Issues and pull requests are welcome. Keep permissions narrow, avoid hidden automation, and add tests for security-sensitive changes.
+Please report security concerns privately. A dedicated security contact will be published with the production support channel. Do not disclose suspected vulnerabilities in a public issue.
 
 ## License
 
-GNU Affero General Public License v3.0. See [LICENSE](LICENSE).
+The frontend and Chrome extension are available under the GNU Affero General Public License v3.0. See [LICENSE](LICENSE).
+
+© 2026 Calyx. All product names and brand assets are trademarks of their respective owners.

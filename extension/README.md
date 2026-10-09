@@ -1,11 +1,15 @@
-# Calyx Work browser extension
+# Calyx Work for Chrome
 
-The extension uses Manifest V3 and deliberately requests only `activeTab`, `storage`, and `scripting`. Page context is captured only after the user presses **Share page context**, kept in session storage, and cleared when the active page changes.
+Calyx Work brings the Calyx experience to the active browser tab while keeping permission and control visible.
 
-## Load for development
+## Permission model
 
-1. Open `chrome://extensions`.
-2. Enable Developer mode.
-3. Choose **Load unpacked** and select this `extension` directory.
+The extension uses Manifest V3 and deliberately requests only `activeTab`, `storage`, and `scripting`.
 
-Before publishing, replace the local app URL in `popup.js` with your deployed Calyx URL. The initial open-source release reads approved page context; action execution is intentionally left behind a future review-and-confirm protocol.
+- Page context is captured only after the user selects **Share page context**.
+- Context is stored for the current browser session, not as permanent browsing history.
+- Shared context is cleared when the active page changes.
+- The extension does not request access to every website by default.
+- Browser actions are designed around visible review and confirmation.
+
+The extension source is provided under the repository license. Calyx’s hosted services and private backend are not included in this distribution.
