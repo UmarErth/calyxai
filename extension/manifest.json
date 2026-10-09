@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Calyx Work",
+  "version": "0.1.0",
+  "description": "Share the active page with Calyx and approve browser actions one at a time.",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "action": { "default_popup": "popup.html", "default_title": "Calyx Work" },
+  "background": { "service_worker": "service-worker.js", "type": "module" },
+  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'self'" }
+}
