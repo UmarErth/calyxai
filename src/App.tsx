@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { ArrowUp, BrainCircuit, Check, ChevronDown, Chrome, Code2, Command, Cpu, Github, KeyRound, Menu, PanelLeftClose, Paperclip, Search, ShieldCheck, Sparkles, SquarePen, X, Zap } from 'lucide-react'
+import { ArrowUp, BrainCircuit, Check, Chrome, Code2, Command, Cpu, Github, Menu, Moon, PanelLeftClose, Search, Sparkles, SquarePen, Sun, X, Zap } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { supabase } from './lib/supabase'
 import type { Message, Plan, Thread } from './types'
@@ -35,15 +35,22 @@ function App() {
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [sidebar, setSidebar] = useState(true)
-  const [view, setView] = useState<'chat' | 'pricing' | 'settings' | 'work'>('chat')
-  const [modal, setModal] = useState<'auth' | 'key' | null>(null)
+  const [view, setView] = useState<'chat' | 'pricing' | 'work'>('chat')
+  const [modal, setModal] = useState<'auth' | null>(null)
   const [email, setEmail] = useState('')
-  const [apiKey, setApiKey] = useState('')
   const [toast, setToast] = useState('')
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem('calyx-theme')
+    return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
   const active = useMemo(() => threads.find(t => t.id === activeId) ?? threads[0], [threads, activeId])
 
   useEffect(() => localStorage.setItem('calyx-threads', JSON.stringify(threads)), [threads])
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 3000); return () => clearTimeout(timer) }, [toast])
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+    localStorage.setItem('calyx-theme', dark ? 'dark' : 'light')
+  }, [dark])
 
   const newThread = () => {
     const thread = { id: uid(), title: 'New conversation', messages: [] }
@@ -77,14 +84,7 @@ function App() {
     setToast(error ? FRIENDLY_ERROR : 'Check your email for a secure sign-in link.'); if (!error) setModal(null)
   }
 
-  const saveKey = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!supabase) return setToast(FRIENDLY_ERROR)
-    const { error } = await supabase.functions.invoke('save-gemini-key', { body: { apiKey } })
-    setToast(error ? FRIENDLY_ERROR : 'Provider key encrypted and saved.'); if (!error) { setApiKey(''); setModal(null) }
-  }
-
-  return <div className="app-shell">
+  return <div className="app-shell" data-view={view}>
     <aside className={sidebar ? 'sidebar' : 'sidebar collapsed'}>
       <div className="brand-row"><button className="brand" onClick={() => setView('chat')}><span className="brand-mark">C</span><span>Calyx</span></button><button className="icon-button desktop" aria-label="Hide sidebar" onClick={() => setSidebar(false)}><PanelLeftClose size={18}/></button></div>
       <button className="new-chat" onClick={newThread}><SquarePen size={17}/> New conversation <kbd>⌘ K</kbd></button>
@@ -92,13 +92,12 @@ function App() {
       <div className="side-bottom">
         <button onClick={() => setView('work')}><Command size={17}/> Work <span className="plan-pill">PRO</span></button>
         <button onClick={() => setView('pricing')}><Zap size={17}/> Plans</button>
-        <button onClick={() => setView('settings')}><KeyRound size={17}/> Settings</button>
         <a href="https://github.com/UmarErth/calyxai" target="_blank" rel="noreferrer"><Github size={17}/> Open source</a>
       </div>
     </aside>
 
     <main className="main">
-      <header><div>{!sidebar && <button className="icon-button" aria-label="Open sidebar" onClick={() => setSidebar(true)}><Menu size={19}/></button>}</div><div className="model"><span className="status-dot"/> Calyx Intelligence <ChevronDown size={14}/></div><button className="sign-in" onClick={() => setModal('auth')}>Sign in</button></header>
+      <header><div>{!sidebar && <button className="icon-button" aria-label="Open sidebar" onClick={() => setSidebar(true)}><Menu size={19}/></button>}</div><div className="model">Calyx</div><div className="header-actions"><button className="icon-button theme-toggle" aria-label={dark ? 'Use light mode' : 'Use dark mode'} onClick={() => setDark(value => !value)}>{dark ? <Sun size={17}/> : <Moon size={17}/>}</button><button className="sign-in" onClick={() => setModal('auth')}>Sign in</button></div></header>
       {view === 'chat' && <Chat active={active} busy={busy} input={input} setInput={setInput} send={send}/>} 
       {view === 'pricing' && <Pricing onChoose={async (plan) => {
         if (plan === 'free') return setModal('auth')
@@ -107,11 +106,10 @@ function App() {
         if (error || !data?.url) return setToast(FRIENDLY_ERROR)
         location.assign(data.url)
       }} />}
-      {view === 'settings' && <Settings onKey={() => setModal('key')} />}
       {view === 'work' && <Work />}
     </main>
 
-    {modal && <div className="modal-backdrop" onMouseDown={() => setModal(null)}><div className="modal" onMouseDown={e => e.stopPropagation()}><button className="modal-close" onClick={() => setModal(null)}><X size={18}/></button>{modal === 'auth' ? <form onSubmit={signIn}><span className="brand-mark large">C</span><h2>Welcome to Calyx</h2><p>Sign in with a secure email link. No password to remember.</p><label>Email address<input required type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)}/></label><button className="primary" type="submit">Send sign-in link</button></form> : <form onSubmit={saveKey}><ShieldCheck size={30}/><h2>Connect your model</h2><p>Your provider key is encrypted server-side with AES-GCM before storage. Calyx never returns it to the browser.</p><label>Model provider API key<input required type="password" autoComplete="off" placeholder="Paste your API key" value={apiKey} onChange={e => setApiKey(e.target.value)}/></label><button className="primary" type="submit">Encrypt and save key</button><small>Never commit an API key to this repository.</small></form>}</div></div>}
+    {modal && <div className="modal-backdrop" onMouseDown={() => setModal(null)}><div className="modal" onMouseDown={e => e.stopPropagation()}><button className="modal-close" onClick={() => setModal(null)}><X size={18}/></button><form onSubmit={signIn}><span className="brand-mark large">C</span><h2>Welcome to Calyx</h2><p>Sign in with a secure email link. No password to remember.</p><label>Email address<input required type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)}/></label><button className="primary" type="submit">Send sign-in link</button></form></div></div>}
     {toast && <div className="toast">{toast}</div>}
   </div>
 }
@@ -120,13 +118,12 @@ function Chat({ active, busy, input, setInput, send }: { active: Thread; busy: b
   const empty = active.messages.length === 0
   return <section className={empty ? 'chat empty' : 'chat'}>
     <div className="messages">{empty ? <div className="empty-state"><div className="flower">✣</div><h1>What shall we think through?</h1><p>Bring a question, a half-formed idea, or something you want to make.</p><div className="suggestions">{suggestions.map(([title, prompt, Icon]) => <button key={title as string} onClick={() => send(undefined, prompt as string)}><Icon size={19}/><span><strong>{title as string}</strong><small>{prompt as string}</small></span></button>)}</div></div> : active.messages.map(message => <article key={message.id} className={`message ${message.role}`}><div className="avatar">{message.role === 'assistant' ? 'C' : 'You'}</div><div className="message-body"><ReactMarkdown>{message.content}</ReactMarkdown></div></article>)}{busy && <article className="message assistant"><div className="avatar">C</div><div className="thinking"><i/><i/><i/></div></article>}</div>
-    <form className="composer" onSubmit={send}><textarea aria-label="Message Calyx" placeholder="Message Calyx…" rows={1} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}/><div className="composer-row"><div><button type="button" className="composer-tool" aria-label="Attach"><Paperclip size={18}/></button><button type="button" className="mode-button"><Sparkles size={16}/> Deep think</button></div><button className="send" disabled={!input.trim() || busy} aria-label="Send"><ArrowUp size={19}/></button></div></form>
+    <form className="composer" onSubmit={send}><textarea aria-label="Message Calyx" placeholder="Message Calyx…" rows={1} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}/><button className="send" disabled={!input.trim() || busy} aria-label="Send"><ArrowUp size={19}/></button></form>
     <p className="disclaimer">Calyx can make mistakes. Check important information.</p>
   </section>
 }
 
 function Pricing({ onChoose }: { onChoose: (p: Plan) => void }) { return <section className="page pricing"><p className="eyebrow accent">Simple, honest pricing</p><h1>Choose the space you need.</h1><p className="lede">Start quietly. Upgrade when your work asks for more.</p><div className="plans">{plans.map(plan => <article className={plan.id === 'starter' ? 'plan featured' : 'plan'} key={plan.id}>{plan.id === 'starter' && <span className="popular">MOST POPULAR</span>}<h2>{plan.name}</h2><p>{plan.note}</p><div className="price">{plan.price}<small>/ month</small></div><button onClick={() => onChoose(plan.id)}>{plan.id === 'free' ? 'Start free' : `Choose ${plan.name}`}</button><ul>{plan.features.map(f => <li key={f}><Check size={17}/>{f}</li>)}</ul></article>)}</div><p className="billing-note">Plans renew monthly and can be cancelled at any time. Unlimited is subject to reasonable abuse prevention and upstream provider availability.</p></section> }
-function Settings({ onKey }: { onKey: () => void }) { return <section className="page narrow"><p className="eyebrow accent">Settings</p><h1>Your Calyx, your key.</h1><div className="setting-card"><div className="setting-icon"><KeyRound/></div><div><h2>Model provider key</h2><p>Bring your own compatible model key. It is encrypted before storage and decrypted only inside the secure chat function.</p></div><button onClick={onKey}>Add key</button></div><div className="security-note"><ShieldCheck/><div><strong>Designed for privacy</strong><p>Conversation rows are protected by row-level security. Secret keys never appear in client logs or API responses.</p></div></div></section> }
 function Work() { return <section className="page work"><div className="work-copy"><p className="eyebrow accent">Calyx Work</p><h1>Turn a conversation into action.</h1><p className="lede">A focused task canvas and open-source Chrome extension for browser work you approve step by step.</p><div className="work-list"><div><Search/><span><strong>Research with context</strong><small>Collect and organize useful pages from the active tab.</small></span></div><div><Chrome/><span><strong>Browser actions, with consent</strong><small>Preview every proposed action before it runs.</small></span></div><div><Cpu/><span><strong>Local-first control bridge</strong><small>No silent background control and no broad host permissions.</small></span></div></div><a className="primary inline" href="https://github.com/UmarErth/calyxai/tree/main/extension" target="_blank" rel="noreferrer"><Github size={17}/> View extension source</a></div><div className="task-card"><div className="task-top"><span>Task preview</span><span className="live"><i/> Ready</span></div><h3>Compare project management tools</h3><div className="task-step done"><Check/> Read the current page</div><div className="task-step current"><Sparkles/> Extract requirements</div><div className="task-step"><Chrome/> Open approved comparison tabs</div><button>Review next action</button></div></section> }
 
 export default App
