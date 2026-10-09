@@ -37,7 +37,10 @@ function App() {
   const [sidebar, setSidebar] = useState(true)
   const [view, setView] = useState<'chat' | 'pricing' | 'work'>('chat')
   const [modal, setModal] = useState<'auth' | null>(null)
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [toast, setToast] = useState('')
   const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem('calyx-theme')
@@ -80,8 +83,23 @@ function App() {
   const signIn = async (e: FormEvent) => {
     e.preventDefault()
     if (!supabase) return setToast(FRIENDLY_ERROR)
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin } })
-    setToast(error ? FRIENDLY_ERROR : 'Check your email for a secure sign-in link.'); if (!error) setModal(null)
+    const result = authMode === 'signup'
+      ? await supabase.auth.signUp({ email, password, options: { data: { username }, emailRedirectTo: location.origin } })
+      : await supabase.auth.signInWithPassword({ email, password })
+    setToast(result.error ? FRIENDLY_ERROR : authMode === 'signup' ? 'Account created. Check your email if confirmation is required.' : 'Welcome back.')
+    if (!result.error) { setModal(null); setPassword('') }
+  }
+
+  const socialSignIn = async (provider: 'google' | 'github') => {
+    if (!supabase) return setToast(FRIENDLY_ERROR)
+    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: location.origin } })
+    if (error) setToast(FRIENDLY_ERROR)
+  }
+
+  const resetPassword = async () => {
+    if (!supabase || !email) return setToast(email ? FRIENDLY_ERROR : 'Enter your email first.')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: location.origin })
+    setToast(error ? FRIENDLY_ERROR : 'Password reset instructions sent.')
   }
 
   return <div className="app-shell" data-view={view}>
@@ -109,7 +127,7 @@ function App() {
       {view === 'work' && <Work />}
     </main>
 
-    {modal && <div className="modal-backdrop" onMouseDown={() => setModal(null)}><div className="modal" onMouseDown={e => e.stopPropagation()}><button className="modal-close" onClick={() => setModal(null)}><X size={18}/></button><form onSubmit={signIn}><span className="brand-mark large">C</span><h2>Welcome to Calyx</h2><p>Sign in with a secure email link. No password to remember.</p><label>Email address<input required type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)}/></label><button className="primary" type="submit">Send sign-in link</button></form></div></div>}
+    {modal && <div className="modal-backdrop" onMouseDown={() => setModal(null)}><div className="modal auth-modal" onMouseDown={e => e.stopPropagation()}><button className="modal-close" onClick={() => setModal(null)}><X size={18}/></button><form onSubmit={signIn}><span className="brand-mark large">C</span><h2>{authMode === 'signin' ? 'Welcome back' : 'Create your account'}</h2><p>{authMode === 'signin' ? 'Continue your work with Calyx.' : 'Choose a username and secure password.'}</p><div className="sso-row"><button type="button" className="sso-button" onClick={() => socialSignIn('google')}><span>G</span> Continue with Google</button><button type="button" className="sso-button" onClick={() => socialSignIn('github')}><Github size={17}/> Continue with GitHub</button></div><div className="auth-divider"><span>or</span></div>{authMode === 'signup' && <label>Username<input required minLength={3} maxLength={32} autoComplete="username" placeholder="Choose a username" value={username} onChange={e => setUsername(e.target.value)}/></label>}<label>Email address<input required type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)}/></label><label>Password<input required type="password" minLength={8} autoComplete={authMode === 'signin' ? 'current-password' : 'new-password'} placeholder="At least 8 characters" value={password} onChange={e => setPassword(e.target.value)}/></label>{authMode === 'signin' && <button type="button" className="text-button forgot" onClick={resetPassword}>Forgot password?</button>}<button className="primary" type="submit">{authMode === 'signin' ? 'Sign in' : 'Create account'}</button><button type="button" className="text-button auth-switch" onClick={() => setAuthMode(mode => mode === 'signin' ? 'signup' : 'signin')}>{authMode === 'signin' ? 'New to Calyx? Create an account' : 'Already have an account? Sign in'}</button></form></div></div>}
     {toast && <div className="toast">{toast}</div>}
   </div>
 }
