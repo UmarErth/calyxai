@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "description": "Share the active page with Calyx and approve browser actions one at a time.",
   "permissions": ["activeTab", "storage", "scripting"],
-  "action": { "default_popup": "popup.html", "default_title": "Calyx Work" },
+  "icons": { "16": "calyx-mark.svg", "48": "calyx-mark.svg", "128": "calyx-mark.svg" },
+  "action": { "default_popup": "popup.html", "default_title": "Calyx Work", "default_icon": "calyx-mark.svg" },
   "background": { "service_worker": "service-worker.js", "type": "module" },
   "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'self'" }
 }
