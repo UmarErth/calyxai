@@ -15,17 +15,21 @@ Deno.serve(async req => {
     const { data: usage, error: usageError } = await userClient.rpc('consume_message', { p_user_id: userId }).single()
     if (usageError) throw usageError
     if (!usage.allowed) return Response.json({ error: `Daily limit reached (${usage.daily_limit}).` }, { status: 429, headers: corsHeaders })
-    const [{ data: stored, error: secretError }, { data: profile, error: profileError }] = await Promise.all([
-      admin.from('user_secrets').select('gemini_key_ciphertext, gemini_key_iv').eq('user_id', userId).single(),
+    const [{ data: stored }, { data: profile, error: profileError }] = await Promise.all([
+      admin.from('user_secrets').select('gemini_key_ciphertext, gemini_key_iv').eq('user_id', userId).maybeSingle(),
       admin.from('profiles').select('plan').eq('id', userId).single(),
     ])
-    if (secretError || !stored) throw new Error('Add your model provider key in Settings first.')
     if (profileError || !profile) throw new Error('Your intelligence profile could not be loaded.')
     const plan = profile.plan as IntelligencePlan
     const intelligence = intelligenceFor(plan)
     const master = Deno.env.get('GEMINI_KEY_ENCRYPTION_SECRET')
-    if (!master) throw new Error('Server encryption is not configured.')
-    const apiKey = await decrypt(stored.gemini_key_ciphertext, stored.gemini_key_iv, master)
+    const serverApiKey = Deno.env.get('GOOGLE_AI_STUDIO_API_KEY')
+    let apiKey = serverApiKey
+    if (stored) {
+      if (!master) throw new Error('Server encryption is not configured.')
+      apiKey = await decrypt(stored.gemini_key_ciphertext, stored.gemini_key_iv, master)
+    }
+    if (!apiKey) throw new Error('No model provider key is configured.')
     const contents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${intelligence.model}:generateContent`, {
       method: 'POST',

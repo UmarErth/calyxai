@@ -28,7 +28,7 @@ Unlimited remains subject to reasonable abuse prevention and upstream provider a
 1. Run `npm install`.
 2. Copy `.env.example` to `.env.local`, then add your Supabase project URL and publishable key. Never use a secret or service-role key in the frontend.
 3. Create or link a Supabase project and apply `supabase/migrations/20261009000000_initial_schema.sql`.
-4. Set the Edge Function secrets shown in `supabase/functions/.env.example`. Use a random value of at least 32 characters for `GEMINI_KEY_ENCRYPTION_SECRET` and keep it backed up; changing it makes saved user keys unreadable.
+4. Set the Edge Function secrets shown in `supabase/functions/.env.example`. `GOOGLE_AI_STUDIO_API_KEY` is the server-only default; users may override it with an encrypted personal key. Use a random value of at least 32 characters for `GEMINI_KEY_ENCRYPTION_SECRET` and keep it backed up; changing it makes saved user keys unreadable.
 5. Deploy the four functions in `supabase/functions`.
 6. Create Stripe recurring prices for $5, $10, and $20. Add their IDs as secrets and point a Stripe webhook at `stripe-webhook` for subscription created, updated, and deleted events.
 7. Run `npm run dev`.
