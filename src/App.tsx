@@ -1,10 +1,11 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { ArrowUp, BrainCircuit, Check, ChevronDown, Chrome, Code2, Command, Cpu, Github, KeyRound, Menu, PanelLeftClose, Paperclip, Search, ShieldCheck, Sparkles, SquarePen, X, Zap } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
-import { isSupabaseConfigured, supabase } from './lib/supabase'
+import { supabase } from './lib/supabase'
 import type { Message, Plan, Thread } from './types'
 
 const uid = () => crypto.randomUUID()
+const FRIENDLY_ERROR = "Oops, that's an error from our side."
 const seedThreads: Thread[] = [
   { id: 'welcome', title: 'Welcome to Calyx', messages: [
     { id: uid(), role: 'assistant', content: "Good afternoon. I’m Calyx — a calm, open-source thinking workspace. Ask me to reason through a problem, draft something precise, or help you build.", createdAt: new Date().toISOString() },
@@ -64,25 +65,23 @@ function App() {
       const reply: Message = { id: uid(), role: 'assistant', content: data.text, createdAt: new Date().toISOString() }
       setThreads(current => current.map(t => t.id === activeId ? { ...t, messages: [...t.messages, reply] } : t))
     } catch {
-      const demo: Message = { id: uid(), role: 'assistant', content: isSupabaseConfigured
-        ? 'I couldn’t reach the model just now. Check the Edge Function and your encrypted provider key, then try again.'
-        : '**The interface is ready.** Connect Supabase and add your model provider key in Settings to receive live answers. Your key is sent only to the server-side encryption function; it is never saved in this browser.', createdAt: new Date().toISOString() }
+      const demo: Message = { id: uid(), role: 'assistant', content: FRIENDLY_ERROR, createdAt: new Date().toISOString() }
       setThreads(current => current.map(t => t.id === activeId ? { ...t, messages: [...t.messages, demo] } : t))
     } finally { setBusy(false) }
   }
 
   const signIn = async (e: FormEvent) => {
     e.preventDefault()
-    if (!supabase) return setToast('Add Supabase environment values to enable sign-in.')
+    if (!supabase) return setToast(FRIENDLY_ERROR)
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin } })
-    setToast(error ? error.message : 'Check your email for a secure sign-in link.'); if (!error) setModal(null)
+    setToast(error ? FRIENDLY_ERROR : 'Check your email for a secure sign-in link.'); if (!error) setModal(null)
   }
 
   const saveKey = async (e: FormEvent) => {
     e.preventDefault()
-    if (!supabase) return setToast('Connect Supabase before saving a key.')
+    if (!supabase) return setToast(FRIENDLY_ERROR)
     const { error } = await supabase.functions.invoke('save-gemini-key', { body: { apiKey } })
-    setToast(error ? error.message : 'Provider key encrypted and saved.'); if (!error) { setApiKey(''); setModal(null) }
+    setToast(error ? FRIENDLY_ERROR : 'Provider key encrypted and saved.'); if (!error) { setApiKey(''); setModal(null) }
   }
 
   return <div className="app-shell">
@@ -103,9 +102,9 @@ function App() {
       {view === 'chat' && <Chat active={active} busy={busy} input={input} setInput={setInput} send={send}/>} 
       {view === 'pricing' && <Pricing onChoose={async (plan) => {
         if (plan === 'free') return setModal('auth')
-        if (!supabase) return setToast('Connect Supabase and Stripe to activate checkout.')
+        if (!supabase) return setToast(FRIENDLY_ERROR)
         const { data, error } = await supabase.functions.invoke('create-checkout', { body: { plan, returnUrl: `${location.origin}/` } })
-        if (error || !data?.url) return setToast(error?.message ?? 'Checkout is unavailable.')
+        if (error || !data?.url) return setToast(FRIENDLY_ERROR)
         location.assign(data.url)
       }} />}
       {view === 'settings' && <Settings onKey={() => setModal('key')} />}
