@@ -1,4 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
+import '@fontsource-variable/ibm-plex-sans'
+import '@fontsource-variable/source-serif-4'
 import { ArrowUp, BrainCircuit, Check, Chrome, Code2, Command, Cpu, Github, Menu, Moon, PanelLeftClose, Search, Sparkles, SquarePen, Sun, X, Zap } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { supabase } from './lib/supabase'
@@ -104,9 +106,9 @@ function App() {
 
   return <div className="app-shell" data-view={view}>
     <aside className={sidebar ? 'sidebar' : 'sidebar collapsed'}>
-      <div className="brand-row"><button className="brand" onClick={() => setView('chat')}><span className="brand-mark">C</span><span>Calyx</span></button><button className="icon-button desktop" aria-label="Hide sidebar" onClick={() => setSidebar(false)}><PanelLeftClose size={18}/></button></div>
-      <button className="new-chat" onClick={newThread}><SquarePen size={17}/> New conversation <kbd>⌘ K</kbd></button>
-      <nav className="history"><p className="eyebrow">Recents</p>{threads.map(thread => <button key={thread.id} className={thread.id === activeId ? 'thread active' : 'thread'} onClick={() => { setActiveId(thread.id); setView('chat') }}><span>{thread.title}</span></button>)}</nav>
+      <div className="brand-row"><button className="brand" onClick={() => setView('chat')}><span className="brand-mark">CX</span><span><strong>Calyx</strong><small>Intelligence office</small></span></button><button className="icon-button desktop" aria-label="Hide sidebar" onClick={() => setSidebar(false)}><PanelLeftClose size={18}/></button></div>
+      <button className="new-chat" onClick={newThread}><SquarePen size={16}/><span>New brief</span><kbd>⌘ K</kbd></button>
+      <nav className="history"><p className="eyebrow">Workspace / Dialogue</p>{threads.map((thread, index) => <button key={thread.id} className={thread.id === activeId ? 'thread active' : 'thread'} onClick={() => { setActiveId(thread.id); setView('chat') }}><span className="thread-index">{String(index + 1).padStart(2, '0')}</span><span>{thread.title}</span></button>)}</nav>
       <div className="side-bottom">
         <button onClick={() => setView('work')}><Command size={17}/> Work <span className="plan-pill">PRO</span></button>
         <button onClick={() => setView('pricing')}><Zap size={17}/> Plans</button>
@@ -115,7 +117,7 @@ function App() {
     </aside>
 
     <main className="main">
-      <header><div>{!sidebar && <button className="icon-button" aria-label="Open sidebar" onClick={() => setSidebar(true)}><Menu size={19}/></button>}</div><div className="model">Calyx</div><div className="header-actions"><button className="icon-button theme-toggle" aria-label={dark ? 'Use light mode' : 'Use dark mode'} onClick={() => setDark(value => !value)}>{dark ? <Sun size={17}/> : <Moon size={17}/>}</button><button className="sign-in" onClick={() => setModal('auth')}>Sign in</button></div></header>
+      <header><div className="header-location">{!sidebar && <button className="icon-button" aria-label="Open sidebar" onClick={() => setSidebar(true)}><Menu size={19}/></button>}<span>CALYX / {view.toUpperCase()}</span></div><div className="model"><i/>Private session</div><div className="header-actions"><button className="icon-button theme-toggle" aria-label={dark ? 'Use light mode' : 'Use dark mode'} onClick={() => setDark(value => !value)}>{dark ? <Sun size={17}/> : <Moon size={17}/>}</button><button className="sign-in" onClick={() => setModal('auth')}>Account</button></div></header>
       {view === 'chat' && <Chat active={active} busy={busy} input={input} setInput={setInput} send={send}/>} 
       {view === 'pricing' && <Pricing onChoose={async (plan) => {
         if (plan === 'free') return setModal('auth')
@@ -135,7 +137,7 @@ function App() {
 function Chat({ active, busy, input, setInput, send }: { active: Thread; busy: boolean; input: string; setInput: (v: string) => void; send: (e?: FormEvent, preset?: string) => void }) {
   const empty = active.messages.length === 0
   return <section className={empty ? 'chat empty' : 'chat'}>
-    <div className="messages">{empty ? <div className="empty-state"><div className="flower">✣</div><h1>What shall we think through?</h1><p>Bring a question, a half-formed idea, or something you want to make.</p><div className="suggestions">{suggestions.map(([title, prompt, Icon]) => <button key={title as string} onClick={() => send(undefined, prompt as string)}><Icon size={19}/><span><strong>{title as string}</strong><small>{prompt as string}</small></span></button>)}</div></div> : active.messages.map(message => <article key={message.id} className={`message ${message.role}`}><div className="avatar">{message.role === 'assistant' ? 'C' : 'You'}</div><div className="message-body"><ReactMarkdown>{message.content}</ReactMarkdown></div></article>)}{busy && <article className="message assistant"><div className="avatar">C</div><div className="thinking"><i/><i/><i/></div></article>}</div>
+    <div className="messages">{empty ? <div className="empty-state"><div className="hero-meta"><span>CALYX / 01</span><span>READY FOR INPUT</span></div><div className="hero-copy"><p className="hero-kicker">Independent intelligence for considered work</p><h1>Begin with the part<br/>that matters.</h1><p>Set out the question, decision, or unfinished thought. Calyx will structure the work with you.</p></div><div className="suggestions">{suggestions.map(([title, prompt, Icon], index) => <button key={title as string} onClick={() => send(undefined, prompt as string)}><span className="suggestion-number">0{index + 1}</span><Icon size={18}/><span><strong>{title as string}</strong><small>{prompt as string}</small></span><span className="suggestion-arrow">↗</span></button>)}</div></div> : active.messages.map(message => <article key={message.id} className={`message ${message.role}`}><div className="avatar">{message.role === 'assistant' ? 'CX' : 'YOU'}</div><div className="message-body"><ReactMarkdown>{message.content}</ReactMarkdown></div></article>)}{busy && <article className="message assistant"><div className="avatar">CX</div><div className="thinking"><i/><i/><i/></div></article>}</div>
     <form className="composer" onSubmit={send}><textarea aria-label="Message Calyx" placeholder="Message Calyx…" rows={1} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}/><button className="send" disabled={!input.trim() || busy} aria-label="Send"><ArrowUp size={19}/></button></form>
     <p className="disclaimer">Calyx can make mistakes. Check important information.</p>
   </section>
