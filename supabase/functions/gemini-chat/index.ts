@@ -26,16 +26,42 @@ const modePrompt: Record<Model, string> = {
   max: `Apply the strongest available reasoning. Explore competing interpretations, test key assumptions, verify internal consistency, and synthesize the best answer without exposing private chain-of-thought. Provide concise conclusions plus decision-relevant rationale.`,
 }
 
-function getPlan(req: Request): Plan {
+function getClaims(req: Request): Record<string, unknown> {
   try {
     const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
-    if (!token) return "free"
-    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")))
-    const plan = payload.app_metadata?.plan
-    return plan in planRank ? plan : "free"
+    if (!token) return {}
+    return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")))
   } catch {
-    return "free"
+    return {}
   }
+}
+
+function getPlan(claims: Record<string, unknown>): Plan {
+  const metadata = claims.app_metadata as Record<string, unknown> | undefined
+  const plan = metadata?.plan
+  return typeof plan === "string" && plan in planRank ? plan as Plan : "free"
+}
+
+async function consumeAnonymousMessage(req: Request): Promise<number | null> {
+  const secretKeys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}")
+  const serviceKey = secretKeys.default || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")
+  if (!serviceKey || !supabaseUrl) throw new Error("Missing quota service configuration")
+
+  const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+  const visitor = req.headers.get("cf-connecting-ip") || forwarded || req.headers.get("x-real-ip") || "unknown"
+  const bytes = new TextEncoder().encode(`${serviceKey}:${visitor}`)
+  const digest = await crypto.subtle.digest("SHA-256", bytes)
+  const visitorHash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("")
+
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/consume_anonymous_message`, {
+    method: "POST",
+    headers: { apikey: serviceKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_visitor_hash: visitorHash }),
+  })
+  if (!response.ok) throw new Error(`Quota service failed: ${response.status}`)
+  const count = await response.json()
+  return typeof count === "number" ? count : null
 }
 
 Deno.serve(async (req: Request) => {
@@ -48,9 +74,18 @@ Deno.serve(async (req: Request) => {
     const body = await req.json()
     const requested = (body.model || "core") as Model
     const selected: Model = requested in modelPlan ? requested : "core"
-    const plan = getPlan(req)
+    const claims = getClaims(req)
+    const plan = getPlan(claims)
     if (planRank[plan] < planRank[modelPlan[selected]]) {
       return Response.json({ error: "This model is not included in your plan." }, { status: 403, headers: cors })
+    }
+
+    const isAnonymous = claims.role !== "authenticated" || !claims.sub || claims.is_anonymous === true
+    if (isAnonymous) {
+      const used = await consumeAnonymousMessage(req)
+      if (used === null) {
+        return Response.json({ error: "You've used today's 10 free messages. Create an account to keep going." }, { status: 429, headers: cors })
+      }
     }
 
     const messages = Array.isArray(body.messages) ? body.messages.slice(-40) : []
