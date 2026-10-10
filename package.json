@@ -17,8 +17,8 @@
     "android:sync": "npm run build && cap sync android",
     "android:apk": "npm run android:sync && cd android && gradlew.bat assembleDebug",
     "desktop": "electron .",
-    "desktop:windows": "electron-builder --win nsis portable",
-    "desktop:linux": "electron-builder --linux AppImage"
+    "desktop:windows": "electron-builder --win nsis portable --publish never",
+    "desktop:linux": "electron-builder --linux AppImage --publish never"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
