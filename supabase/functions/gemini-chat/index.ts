@@ -91,7 +91,7 @@ function safePublicUrl(value: string): URL | null {
 }
 
 async function searchAndRead(query: string): Promise<Source[]> {
-  const instanceValue = Deno.env.get("SEARXNG_BASE_URL") || "https://searx.ononoki.org/"
+  const instanceValue = Deno.env.get("SEARXNG_BASE_URL") || "https://search.pi.vps.pw/"
   const instance = instanceValue ? safePublicUrl(instanceValue) : null
   if (!instance) throw new Error("WEB_SEARCH_NOT_CONFIGURED")
 
