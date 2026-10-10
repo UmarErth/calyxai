@@ -26,10 +26,14 @@ jobs:
       - run: npm run android:sync
       - run: chmod +x android/gradlew
       - run: cd android && ./gradlew assembleDebug
+      - name: Name the APK
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          mv android/app/build/outputs/apk/debug/app-debug.apk "android/app/build/outputs/apk/debug/calyx-uni${VERSION}.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: Calyx-Android-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/calyx-uni*.apk
 
   desktop:
     strategy:
