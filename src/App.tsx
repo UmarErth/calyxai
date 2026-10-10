@@ -5,6 +5,7 @@ import { ArrowRight, ArrowUp, BrainCircuit, Check, ChevronDown, Chrome, Code2, C
 import ReactMarkdown from 'react-markdown'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
+import { authRedirectUrl, closeNativeOAuth, isNativeApp, listenForNativeAuth, openNativeOAuth } from './native'
 import type { Message, ModelId, Plan, Thread } from './types'
 
 const uid = () => crypto.randomUUID()
@@ -49,7 +50,8 @@ function App() {
   const [activeId, setActiveId] = useState('welcome')
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
-  const [view, setView] = useState<'landing' | 'chat' | 'pricing' | 'work' | 'privacy' | 'terms'>(() => location.hash === '#chat' ? 'chat' : location.hash === '#pricing' ? 'pricing' : location.hash === '#work' ? 'work' : location.hash === '#privacy' ? 'privacy' : location.hash === '#terms' ? 'terms' : 'landing')
+  const nativeApp = isNativeApp()
+  const [view, setView] = useState<'landing' | 'chat' | 'pricing' | 'work' | 'privacy' | 'terms'>(() => nativeApp || location.hash === '#chat' ? 'chat' : location.hash === '#pricing' ? 'pricing' : location.hash === '#work' ? 'work' : location.hash === '#privacy' ? 'privacy' : location.hash === '#terms' ? 'terms' : 'landing')
   const [modal, setModal] = useState<'auth' | 'account' | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [model, setModel] = useState<ModelId>(() => (localStorage.getItem('calyx-model') as ModelId) || 'core')
@@ -91,6 +93,37 @@ function App() {
     const { data } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null))
     return () => data.subscription.unsubscribe()
   }, [])
+  useEffect(() => {
+    if (!nativeApp || !supabase) return
+    const authClient = supabase
+    document.documentElement.dataset.native = 'true'
+    const handleCallback = async (url: string) => {
+      try {
+        const callback = new URL(url)
+        const code = callback.searchParams.get('code')
+        if (code) {
+          const { error } = await authClient.auth.exchangeCodeForSession(code)
+          if (error) throw error
+        } else {
+          const fragment = new URLSearchParams(callback.hash.replace(/^#/, ''))
+          const accessToken = fragment.get('access_token')
+          const refreshToken = fragment.get('refresh_token')
+          if (!accessToken || !refreshToken) throw new Error('Missing authentication response')
+          const { error } = await authClient.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          if (error) throw error
+        }
+        await closeNativeOAuth()
+        setModal(null)
+        setToast('Welcome to Calyx.')
+        navigate('chat')
+      } catch {
+        setToast(FRIENDLY_ERROR)
+      }
+    }
+    let dispose: () => void = () => undefined
+    void listenForNativeAuth(handleCallback).then(cleanup => { dispose = cleanup })
+    return () => dispose()
+  }, [nativeApp])
   useEffect(() => { localStorage.setItem('calyx-model', model) }, [model])
   useEffect(() => { localStorage.setItem('calyx-density', density); document.documentElement.dataset.density = density }, [density])
   useEffect(() => { localStorage.setItem('calyx-motion', motion ? 'full' : 'reduced'); document.documentElement.dataset.motion = motion ? 'full' : 'reduced' }, [motion])
@@ -149,8 +182,9 @@ function App() {
 
   const socialSignIn = async (provider: 'google' | 'github') => {
     if (!supabase) return setToast(FRIENDLY_ERROR)
-    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: location.origin } })
-    if (error) setToast(FRIENDLY_ERROR)
+    const { data, error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: authRedirectUrl(), skipBrowserRedirect: nativeApp } })
+    if (error || (nativeApp && !data.url)) return setToast(FRIENDLY_ERROR)
+    if (nativeApp && data.url) await openNativeOAuth(data.url).catch(() => setToast(FRIENDLY_ERROR))
   }
 
   const resetPassword = async () => {
@@ -172,9 +206,9 @@ function App() {
     setModel(next)
   }
 
-  return <div className="app-shell" data-view={view}>
+  return <div className="app-shell" data-view={view} data-native={nativeApp ? 'true' : 'false'}>
     {view === 'landing' ? <Landing dark={dark} setDark={setDark} user={user} displayName={displayName} openChat={() => navigate('chat')} openPricing={() => navigate('pricing')} openAuth={() => setModal(user ? 'account' : 'auth')} openLegal={navigate}/> : <main className="product-shell">
-      <header className="product-nav"><button className="logo-button" onClick={() => navigate('landing')}><Logo/></button><nav><button className={view === 'chat' ? 'active' : ''} onClick={() => navigate('chat')}>Chat</button><button className={view === 'work' ? 'active' : ''} onClick={() => navigate('work')}>Work</button><button className={view === 'pricing' ? 'active' : ''} onClick={() => navigate('pricing')}>Plans</button></nav><div className="header-actions"><a className="github-link" href="https://github.com/UmarErth/calyxai" target="_blank" rel="noreferrer"><Github size={16}/></a><button className="icon-button theme-toggle" aria-label={dark ? 'Use light mode' : 'Use dark mode'} onClick={() => setDark(value => !value)}>{dark ? <Sun size={17}/> : <Moon size={17}/>}</button>{user ? <button className="user-chip" onClick={() => setModal('account')}><span>{displayName.slice(0,1).toUpperCase()}</span>{displayName}</button> : <button className="sign-in" onClick={() => setModal('auth')}>Sign in</button>}</div></header>
+      <header className="product-nav"><button className="logo-button" onClick={() => navigate(nativeApp ? 'chat' : 'landing')}><Logo/></button><nav><button className={view === 'chat' ? 'active' : ''} onClick={() => navigate('chat')}>Chat</button><button className={view === 'work' ? 'active' : ''} onClick={() => navigate('work')}>Work</button><button className={view === 'pricing' ? 'active' : ''} onClick={() => navigate('pricing')}>Plans</button></nav><div className="header-actions">{!nativeApp && <a className="github-link" href="https://github.com/UmarErth/calyxai" target="_blank" rel="noreferrer"><Github size={16}/></a>}<button className="icon-button theme-toggle" aria-label={dark ? 'Use light mode' : 'Use dark mode'} onClick={() => setDark(value => !value)}>{dark ? <Sun size={17}/> : <Moon size={17}/>}</button>{user ? <button className="user-chip" onClick={() => setModal('account')}><span>{displayName.slice(0,1).toUpperCase()}</span>{displayName}</button> : <button className="sign-in" onClick={() => setModal('auth')}>Sign in</button>}</div></header>
       {view === 'chat' && <Chat active={active} threads={threads} activeId={activeId} setActiveId={setActiveId} newThread={newThread} busy={busy} input={input} setInput={setInput} send={send} model={model} currentPlan={currentPlan} chooseModel={chooseModel} webSearch={webSearch} setWebSearch={setWebSearch} researchStage={researchStage} enterToSend={enterToSend}/>}
       {view === 'pricing' && <Pricing onChoose={async (plan) => {
         if (user && plan === currentPlan) return setToast('You are already on this plan.')

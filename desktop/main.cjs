@@ -1,6 +1,27 @@
-const { app, BrowserWindow, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, shell } = require('electron')
+const path = require('node:path')
 
-const CALYX_ORIGIN = 'https://calyxai.pages.dev'
+const APP_SCHEME = 'calyx'
+let mainWindow
+let pendingAuthUrl
+
+app.setAsDefaultProtocolClient(APP_SCHEME)
+if (!app.requestSingleInstanceLock()) app.quit()
+
+function authUrlFromArgs(args) {
+  return args.find(value => typeof value === 'string' && value.startsWith(`${APP_SCHEME}://`))
+}
+
+function deliverAuthUrl(url) {
+  if (!url) return
+  pendingAuthUrl = url
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('auth-callback', url)
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
+    mainWindow.focus()
+  }
+}
 
 function openExternal(url) {
   try {
@@ -12,7 +33,7 @@ function openExternal(url) {
 }
 
 function createWindow() {
-  const window = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1320,
     height: 860,
     minWidth: 900,
@@ -21,6 +42,7 @@ function createWindow() {
     title: 'Calyx',
     autoHideMenuBar: true,
     webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
@@ -28,39 +50,36 @@ function createWindow() {
     },
   })
 
-  window.webContents.setWindowOpenHandler(({ url }) => {
-    try {
-      if (new URL(url).origin === CALYX_ORIGIN) return { action: 'allow' }
-    } catch {
-      return { action: 'deny' }
-    }
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     openExternal(url)
     return { action: 'deny' }
   })
-
-  window.webContents.on('will-navigate', (event, url) => {
-    try {
-      if (new URL(url).origin === CALYX_ORIGIN) return
-    } catch {
-      event.preventDefault()
-      return
-    }
-    if (url) {
-      event.preventDefault()
-      openExternal(url)
-    }
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url.startsWith('file:')) return
+    event.preventDefault()
+    openExternal(url)
   })
-
-  void window.loadURL(`${CALYX_ORIGIN}/#chat`)
+  mainWindow.webContents.once('did-finish-load', () => {
+    if (pendingAuthUrl) deliverAuthUrl(pendingAuthUrl)
+  })
+  void mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'), { hash: 'chat' })
 }
 
+ipcMain.handle('open-oauth', async (_event, value) => {
+  const url = new URL(value)
+  if (url.protocol !== 'https:' || (!url.hostname.endsWith('.supabase.co') && url.hostname !== 'supabase.co')) throw new Error('Blocked OAuth URL')
+  await shell.openExternal(url.toString())
+})
+
+app.on('second-instance', (_event, argv) => deliverAuthUrl(authUrlFromArgs(argv)))
+app.on('open-url', (event, url) => { event.preventDefault(); deliverAuthUrl(url) })
 app.whenReady().then(() => {
+  pendingAuthUrl = authUrlFromArgs(process.argv)
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
-
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })

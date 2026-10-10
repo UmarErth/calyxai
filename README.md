@@ -44,7 +44,7 @@ Calyx Work uses narrow Manifest V3 permissions. It reads the active page only af
 
 ## Official apps
 
-The Android, Windows, and Linux clients open the production Calyx service in a dedicated app window. They do not expose Node.js, unrestricted files, shell commands, or private device APIs to website content. External links open in the device's default browser.
+The Android, Windows, and Linux clients bundle the Calyx interface as standalone applications. They connect directly to the Calyx API, use native deep links for authentication, and do not depend on loading the public website. Desktop clients do not expose Node.js, unrestricted files, shell commands, or private device APIs to interface content. External links and OAuth consent open in the device's default browser.
 
 ## Security
 
