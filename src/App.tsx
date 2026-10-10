@@ -111,8 +111,8 @@ function App() {
     setInput(''); setBusy(true); navigate('chat')
     const timers: number[] = []
     if (webSearch) {
-      setResearchStage('Searching the web')
-      timers.push(window.setTimeout(() => setResearchStage('Visiting useful pages'), 900))
+      setResearchStage('Opening website links')
+      timers.push(window.setTimeout(() => setResearchStage('Reading page content'), 900))
       timers.push(window.setTimeout(() => setResearchStage('Comparing sources'), 2400))
     } else setResearchStage('Reasoning through your request')
     const userMessage: Message = { id: uid(), role: 'user', content: text, createdAt: new Date().toISOString() }
@@ -124,14 +124,14 @@ function App() {
         let message = FRIENDLY_ERROR
         if ('context' in error && error.context instanceof Response) {
           const payload = await error.context.clone().json().catch(() => null)
-          if (payload?.error?.includes('10 free messages') || payload?.error === "Web search isn't ready yet.") message = payload.error
+          if (payload?.error?.includes('10 free messages')) message = payload.error
         }
         throw new Error(message)
       }
       const reply: Message = { id: uid(), role: 'assistant', content: data.text, sources: data.sources, reasoningSummary: data.reasoningSummary, createdAt: new Date().toISOString() }
       setThreads(current => current.map(t => t.id === activeId ? { ...t, messages: [...t.messages, reply] } : t))
     } catch (error) {
-      const content = error instanceof Error && (error.message.includes('10 free messages') || error.message === "Web search isn't ready yet.") ? error.message : FRIENDLY_ERROR
+      const content = error instanceof Error && error.message.includes('10 free messages') ? error.message : FRIENDLY_ERROR
       const demo: Message = { id: uid(), role: 'assistant', content, createdAt: new Date().toISOString() }
       setThreads(current => current.map(t => t.id === activeId ? { ...t, messages: [...t.messages, demo] } : t))
     } finally { timers.forEach(clearTimeout); setResearchStage(''); setBusy(false) }
@@ -208,8 +208,8 @@ function Chat({ active, threads, activeId, setActiveId, newThread, busy, input, 
     requestAnimationFrame(() => transcript.scrollTo({ top: transcript.scrollHeight, behavior: active.messages.length > 1 ? 'smooth' : 'auto' }))
   }, [activeId, active.messages.length, busy])
   return <section className={empty ? 'chat cockpit empty' : 'chat cockpit'}><aside className="conversation-rail"><div><p>Conversations</p><button onClick={newThread} aria-label="New conversation"><SquarePen size={16}/></button></div>{threads.map((thread, index) => <button key={thread.id} className={thread.id === activeId ? 'active' : ''} onClick={() => setActiveId(thread.id)}><span>{String(index + 1).padStart(2,'0')}</span><strong>{thread.title}</strong></button>)}</aside><section className="dialogue-stage"><div className="stage-header"><div><span>ACTIVE DIALOGUE</span><strong>{active.title}</strong></div><div className="stage-controls"><ModelSelector value={model} plan={currentPlan} onChange={chooseModel}/><span className="stage-status"><i/> Private</span></div></div>
-    <div className="messages" ref={messagesRef}>{empty ? <div className="empty-state"><Logo wordmark={false}/><p className="hero-kicker">NEW DIALOGUE</p><h1>What are we<br/>working on?</h1><p>Bring the rough version. Calyx will help shape the structure, challenge assumptions, and move toward something useful.</p><div className="suggestions">{suggestions.map(([title, prompt, Icon]) => <button key={title as string} onClick={() => send(undefined, prompt as string)}><Icon size={18}/><span><strong>{title as string}</strong><small>{prompt as string}</small></span><ArrowRight size={16}/></button>)}</div></div> : active.messages.map(message => <article key={message.id} className={`message ${message.role}`}><div className="avatar">{message.role === 'assistant' ? <Logo wordmark={false}/> : 'YOU'}</div><div className="message-body">{message.role === 'assistant' && (message.sources?.length || message.reasoningSummary) ? <ResearchDetails sources={message.sources || []} summary={message.reasoningSummary}/> : null}<ReactMarkdown>{message.content}</ReactMarkdown></div></article>)}{busy && <article className="message assistant research-pending"><div className="avatar"><Logo wordmark={false}/></div><div><div className="thinking"><i/><i/><i/></div><strong>{researchStage}</strong><small>{webSearch ? 'Calyx will show every source it uses.' : 'Building a careful response.'}</small></div></article>}</div>
-    <form className="composer" onSubmit={send}><button type="button" className={webSearch ? 'web-toggle active' : 'web-toggle'} onClick={() => setWebSearch(!webSearch)} title="Search and read the web"><Globe2 size={16}/><span>Web</span></button><textarea aria-label="Message Calyx" placeholder={webSearch ? 'Ask Calyx to research the web…' : 'Message Calyx…'} rows={1} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && enterToSend) { e.preventDefault(); send() } }}/><button className="send" disabled={!input.trim() || busy} aria-label="Send"><ArrowUp size={19}/></button></form>
+    <div className="messages" ref={messagesRef}>{empty ? <div className="empty-state"><Logo wordmark={false}/><p className="hero-kicker">NEW DIALOGUE</p><h1>What are we<br/>working on?</h1><p>Bring the rough version. Calyx will help shape the structure, challenge assumptions, and move toward something useful.</p><div className="suggestions">{suggestions.map(([title, prompt, Icon]) => <button key={title as string} onClick={() => send(undefined, prompt as string)}><Icon size={18}/><span><strong>{title as string}</strong><small>{prompt as string}</small></span><ArrowRight size={16}/></button>)}</div></div> : active.messages.map(message => <article key={message.id} className={`message ${message.role}`}><div className="avatar">{message.role === 'assistant' ? <Logo wordmark={false}/> : 'YOU'}</div><div className="message-body">{message.role === 'assistant' && (message.sources?.length || message.reasoningSummary) ? <ResearchDetails sources={message.sources || []} summary={message.reasoningSummary}/> : null}<ReactMarkdown>{message.content}</ReactMarkdown></div></article>)}{busy && <article className="message assistant research-pending"><div className="avatar"><Logo wordmark={false}/></div><div><div className="thinking"><i/><i/><i/></div><strong>{researchStage}</strong><small>{webSearch ? 'Calyx will show every website it reads.' : 'Building a careful response.'}</small></div></article>}</div>
+    <form className="composer" onSubmit={send}><button type="button" className={webSearch ? 'web-toggle active' : 'web-toggle'} onClick={() => setWebSearch(!webSearch)} title="Read website links you provide"><Globe2 size={16}/><span>Links</span></button><textarea aria-label="Message Calyx" placeholder={webSearch ? 'Paste website links and tell Calyx what to find…' : 'Message Calyx…'} rows={1} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && enterToSend) { e.preventDefault(); send() } }}/><button className="send" disabled={!input.trim() || busy} aria-label="Send"><ArrowUp size={19}/></button></form>
     <p className="disclaimer">Calyx can make mistakes. Check important information.</p>
   </section></section>
 }

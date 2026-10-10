@@ -2,7 +2,7 @@
 
 Calyx is an AI workspace designed for clear thinking, focused work, and useful action.
 
-[Open Calyx](https://calyx.umarerthteam.workers.dev)
+[Open Calyx](https://calyxai.pages.dev)
 
 ## The product
 
@@ -19,10 +19,13 @@ The Work experience extends conversations into permission-based browser tasks. C
 
 ## Open-source surfaces
 
-This repository contains the official open-source Calyx web interface and Chrome extension.
+This repository contains the official open-source Calyx web interface, Chrome extension, Android client, and Windows/Linux desktop clients.
 
 - `src/` — the Calyx frontend
 - `extension/` — the Calyx Work Chrome extension
+- `android/` — the Capacitor Android app
+- `desktop/` — the security-restricted Electron desktop app
+- `.github/workflows/build-apps.yml` — reproducible APK, Windows, and Linux builds
 
 The hosted service, intelligence orchestration, billing systems, operational infrastructure, and private backend are not part of this public distribution.
 
@@ -38,6 +41,10 @@ The hosted service, intelligence orchestration, billing systems, operational inf
 ## Chrome extension
 
 Calyx Work uses narrow Manifest V3 permissions. It reads the active page only after explicit approval, keeps shared context in session storage, and clears that context when the active page changes.
+
+## Official apps
+
+The Android, Windows, and Linux clients open the production Calyx service in a dedicated app window. They do not expose Node.js, unrestricted files, shell commands, or private device APIs to website content. External links open in the device's default browser.
 
 ## Security
 
