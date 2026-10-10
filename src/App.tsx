@@ -24,7 +24,7 @@ const suggestions = [
 const plans: { name: string; id: Plan; price: string; note: string; features: string[] }[] = [
   { name: 'Free', id: 'free', price: '$0', note: 'For thoughtful everyday use', features: ['50 messages each day', 'Calyx Core intelligence', 'Encrypted bring-your-own key', 'Community support'] },
   { name: 'Starter', id: 'starter', price: '$5', note: 'For longer projects', features: ['500 messages each day', 'Calyx Focus reasoning', 'Stronger planning prompt', 'Export conversations'] },
-  { name: 'Work', id: 'work', price: '$10', note: 'For doing, not just asking', features: ['Calyx Work advanced reasoning', 'Execution-grade system prompt', 'Chrome extension', 'Permission-based browser actions'] },
+  { name: 'Work', id: 'work', price: '$10', note: 'For doing, not just asking', features: ['5,000 messages each day', 'Calyx Work advanced reasoning', 'Execution-grade system prompt', 'Chrome extension', 'Permission-based browser actions'] },
   { name: 'Unlimited', id: 'unlimited', price: '$20', note: 'For your whole working day', features: ['Unlimited messages', 'Calyx Max intelligence', 'Deepest reasoning profile', 'Every Work feature'] },
 ]
 

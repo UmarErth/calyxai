@@ -12,7 +12,7 @@ Calyx pairs a quiet, distraction-free interface with intelligence profiles that 
 | --- | ---: | ---: | --- |
 | Free | $0 | 50 | Calyx Core |
 | Starter | $5/month | 500 | Calyx Focus |
-| Work | $10/month | 500 | Calyx Work |
+| Work | $10/month | 5,000 | Calyx Work |
 | Unlimited | $20/month | Unlimited | Calyx Max |
 
 The Work experience extends conversations into permission-based browser tasks. Calyx always keeps people in control of consequential actions.
