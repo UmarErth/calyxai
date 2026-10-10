@@ -43,11 +43,17 @@ jobs:
           - os: windows-latest
             command: npm run desktop:windows
             artifact: Calyx-Windows
-            path: release/*.exe
+            path: |
+              release/*.exe
+              release/*.yml
+              release/*.blockmap
           - os: ubuntu-latest
             command: npm run desktop:linux
             artifact: Calyx-Linux
-            path: release/*.AppImage
+            path: |
+              release/*.AppImage
+              release/*.yml
+              release/*.blockmap
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -78,4 +84,8 @@ jobs:
           files: |
             artifacts/Calyx-Android-APK/*.apk
             artifacts/Calyx-Windows/*.exe
+            artifacts/Calyx-Windows/*.yml
+            artifacts/Calyx-Windows/*.blockmap
             artifacts/Calyx-Linux/*.AppImage
+            artifacts/Calyx-Linux/*.yml
+            artifacts/Calyx-Linux/*.blockmap

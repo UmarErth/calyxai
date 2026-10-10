@@ -6,9 +6,14 @@ declare global {
       platform: string
       openOAuth: (url: string) => Promise<void>
       onAuthCallback: (listener: (url: string) => void) => () => void
+      checkForUpdates: () => Promise<void>
+      downloadUpdate: () => Promise<void>
+      onUpdateState: (listener: (state: NativeUpdateState) => void) => () => void
     }
   }
 }
+
+export interface NativeUpdateState { status: 'checking' | 'available' | 'downloading' | 'installing' | 'current' | 'error'; version?: string; progress?: number }
 
 export const isDesktopApp = () => Boolean(window.calyxNative)
 export const isAndroidApp = () => Capacitor.isNativePlatform()

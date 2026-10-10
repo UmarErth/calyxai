@@ -65,6 +65,9 @@ async function consumeAnonymousMessage(req: Request): Promise<number | null> {
 }
 
 type Source = { title: string; url: string; status: string; excerpt?: string }
+type InputAttachment = { name?: string; type?: string; size?: number; data?: string }
+const MAX_AI_FILE_BYTES = 10 * 1024 * 1024
+const allowedAttachment = (type: string) => type.startsWith("image/") || type.startsWith("text/") || type === "application/pdf" || type === "application/json"
 
 function plainText(value: string): string {
   return value
@@ -172,11 +175,20 @@ Deno.serve(async (req: Request) => {
     if (!messages.length) return Response.json({ error: "A message is required." }, { status: 400, headers: cors })
 
     const contents = messages
-      .filter((message: { role?: string; content?: string }) => typeof message.content === "string" && message.content.trim())
-      .map((message: { role: string; content: string }) => ({
-        role: message.role === "assistant" ? "model" : "user",
-        parts: [{ text: message.content.slice(0, 50_000) }],
-      }))
+      .filter((message: { role?: string; content?: string; attachments?: InputAttachment[] }) => typeof message.content === "string" && (message.content.trim() || message.attachments?.length))
+      .map((message: { role: string; content: string; attachments?: InputAttachment[] }) => {
+        const parts: Array<Record<string, unknown>> = [{ text: message.content.slice(0, 50_000) }]
+        for (const attachment of (message.attachments || []).slice(0, 4)) {
+          const type = String(attachment.type || "")
+          const size = Number(attachment.size || 0)
+          const data = String(attachment.data || "")
+          if (!allowedAttachment(type) || size <= 0 || size >= MAX_AI_FILE_BYTES || !data || data.length > Math.ceil(MAX_AI_FILE_BYTES * 4 / 3) + 16) {
+            throw new Error("Invalid attachment")
+          }
+          parts.push({ inline_data: { mime_type: type, data } })
+        }
+        return { role: message.role === "assistant" ? "model" : "user", parts }
+      })
 
     const responseStyle = ["concise", "balanced", "detailed"].includes(body.preferences?.responseStyle) ? body.preferences.responseStyle : "balanced"
     const stylePrompt = responseStyle === "concise" ? "Keep the answer concise." : responseStyle === "detailed" ? "Give a thorough, well-structured answer." : "Balance clarity with useful detail."

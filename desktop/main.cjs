@@ -1,9 +1,20 @@
 const { app, BrowserWindow, ipcMain, shell } = require('electron')
 const path = require('node:path')
+const { autoUpdater } = require('electron-updater')
 
 const APP_SCHEME = 'calyx'
 let mainWindow
 let pendingAuthUrl
+let updateReady = false
+
+autoUpdater.autoDownload = false
+autoUpdater.autoInstallOnAppQuit = true
+function updateState(state) { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('update-state', state) }
+autoUpdater.on('update-available', info => updateState({ status: 'available', version: info.version }))
+autoUpdater.on('update-not-available', () => updateState({ status: 'current' }))
+autoUpdater.on('download-progress', progress => updateState({ status: 'downloading', progress: progress.percent }))
+autoUpdater.on('update-downloaded', () => { updateReady = true; updateState({ status: 'installing' }); setTimeout(() => autoUpdater.quitAndInstall(true, true), 1200) })
+autoUpdater.on('error', error => { console.error('Updater:', error.message); updateState({ status: 'error' }) })
 
 app.setAsDefaultProtocolClient(APP_SCHEME)
 if (!app.requestSingleInstanceLock()) app.quit()
@@ -70,6 +81,12 @@ ipcMain.handle('open-oauth', async (_event, value) => {
   if (url.protocol !== 'https:' || (!url.hostname.endsWith('.supabase.co') && url.hostname !== 'supabase.co')) throw new Error('Blocked OAuth URL')
   await shell.openExternal(url.toString())
 })
+ipcMain.handle('check-for-updates', async () => {
+  if (!app.isPackaged) return updateState({ status: 'current' })
+  updateState({ status: 'checking' })
+  await autoUpdater.checkForUpdates()
+})
+ipcMain.handle('download-update', async () => { if (!updateReady) await autoUpdater.downloadUpdate() })
 
 app.on('second-instance', (_event, argv) => deliverAuthUrl(authUrlFromArgs(argv)))
 app.on('open-url', (event, url) => { event.preventDefault(); deliverAuthUrl(url) })
