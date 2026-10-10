@@ -66,6 +66,21 @@ async function consumeAnonymousMessage(req: Request): Promise<number | null> {
 
 type Source = { title: string; url: string; status: string; excerpt?: string }
 
+function plainText(value: string): string {
+  return value
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;|&#34;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
 function safePublicUrl(value: string): URL | null {
   try {
     const url = new URL(value)
@@ -76,24 +91,54 @@ function safePublicUrl(value: string): URL | null {
 }
 
 async function searchAndRead(query: string): Promise<Source[]> {
-  const braveKey = Deno.env.get("BRAVE_SEARCH_API_KEY")
-  if (!braveKey) throw new Error("WEB_SEARCH_NOT_CONFIGURED")
-  const searchUrl = new URL("https://api.search.brave.com/res/v1/web/search")
-  searchUrl.search = new URLSearchParams({ q: query.slice(0, 600), count: "5", country: "US", search_lang: "en", safesearch: "moderate" }).toString()
-  const response = await fetch(searchUrl, { headers: { Accept: "application/json", "X-Subscription-Token": braveKey } })
-  if (!response.ok) throw new Error(`Search failed: ${response.status}`)
-  const data = await response.json()
-  const results = (data.web?.results || []).slice(0, 5) as Array<{ title?: string; url?: string; description?: string }>
+  const instanceValue = Deno.env.get("SEARXNG_BASE_URL") || "https://searx.ononoki.org/"
+  const instance = instanceValue ? safePublicUrl(instanceValue) : null
+  if (!instance) throw new Error("WEB_SEARCH_NOT_CONFIGURED")
+
+  const searchUrl = new URL("search", instance.toString().endsWith("/") ? instance : `${instance}/`)
+  searchUrl.search = new URLSearchParams({
+    q: query.slice(0, 600),
+    format: "json",
+    categories: "general",
+    language: "en-US",
+    safesearch: "1",
+  }).toString()
+  const response = await fetch(searchUrl, {
+    headers: { Accept: "application/json", "User-Agent": "CalyxResearch/1.0" },
+    signal: AbortSignal.timeout(8000),
+  })
+  let results: Array<{ title?: string; url?: string; content?: string }> = []
+  if (response.ok && (response.headers.get("content-type") || "").includes("application/json")) {
+    const data = await response.json()
+    results = (Array.isArray(data.results) ? data.results : []).slice(0, 5)
+  } else if ([403, 404].includes(response.status)) {
+    searchUrl.searchParams.delete("format")
+    const htmlResponse = await fetch(searchUrl, {
+      headers: { Accept: "text/html", "User-Agent": "CalyxResearch/1.0" },
+      signal: AbortSignal.timeout(8000),
+    })
+    if (!htmlResponse.ok) throw new Error(`Search failed: ${htmlResponse.status}`)
+    const html = (await htmlResponse.text()).slice(0, 500_000)
+    const blocks = [...html.matchAll(/<article[^>]*class=["'][^"']*\bresult\b[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi)]
+    results = blocks.slice(0, 5).map(([, block]) => {
+      const link = block.match(/<h3[^>]*>[\s\S]*?<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i)
+      const snippet = block.match(/<(?:p|div)[^>]*class=["'][^"']*(?:content|result-content)[^"']*["'][^>]*>([\s\S]*?)<\/(?:p|div)>/i)
+      return { url: link?.[1], title: plainText(link?.[2] || ""), content: plainText(snippet?.[1] || "") }
+    }).filter(result => result.url)
+  } else {
+    throw new Error(`Search failed: ${response.status}`)
+  }
+  if (!results.length) throw new Error("Search returned no results")
   return await Promise.all(results.map(async result => {
     const url = safePublicUrl(result.url || "")
-    const source: Source = { title: result.title || url?.hostname || "Web result", url: url?.toString() || "", status: "Search result", excerpt: result.description || "" }
+    const source: Source = { title: result.title || url?.hostname || "Web result", url: url?.toString() || "", status: "Search result", excerpt: result.content || "" }
     if (!url) return source
     try {
       const page = await fetch(url, { headers: { "User-Agent": "CalyxResearch/1.0" }, signal: AbortSignal.timeout(5000), redirect: "follow" })
       const type = page.headers.get("content-type") || ""
       if (!page.ok || (!type.includes("text/html") && !type.includes("text/plain"))) return source
       const html = (await page.text()).slice(0, 250_000)
-      const text = html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim().slice(0, 12_000)
+      const text = plainText(html).slice(0, 12_000)
       return { ...source, status: "Visited and read", excerpt: text || source.excerpt }
     } catch { return source }
   }))
