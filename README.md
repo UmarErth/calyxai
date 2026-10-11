@@ -48,7 +48,7 @@ The Android, Windows, and Linux clients bundle the Calyx interface as standalone
 
 The official signed Android build is also available through the Calyx F-Droid repository:
 
-`https://calyxai.pages.dev/fdroid/repo`
+`https://raw.githubusercontent.com/UmarErth/calyxai/main/public/fdroid/repo`
 
 Repository fingerprint: `9D F7 49 C6 D8 2A A3 F2 6C 35 65 00 36 71 44 1E 3E DB D7 A6 51 8B BE 63 B8 E8 7F 07 49 98 51 3A`
 

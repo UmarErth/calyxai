@@ -1,6 +1,7 @@
 {
   "repo": {
-    "timestamp": 1791727226000
+    "address": "https://raw.githubusercontent.com/UmarErth/calyxai/main/public/fdroid/repo",
+    "timestamp": 1791743395000
   },
   "packages": {
     "ai.calyx.app": {
@@ -8,12 +9,12 @@
         "lastUpdated": 1791726940000
       },
       "versions": {
-        "5adf4df87751219d1bb5cdbd80b24a274e9539ba8dfb3ef97e443326d36d9bca": {
+        "aa45c6301bbd59f76dc4bdcd811fff0c8ca0f8cea722323680d1c013aba691b2": {
           "added": 1791726940000,
           "file": {
             "name": "/ai.calyx.app_5.apk",
-            "sha256": "5adf4df87751219d1bb5cdbd80b24a274e9539ba8dfb3ef97e443326d36d9bca",
-            "size": 49264125
+            "sha256": "aa45c6301bbd59f76dc4bdcd811fff0c8ca0f8cea722323680d1c013aba691b2",
+            "size": 37264651
           },
           "manifest": {
             "nativecode": [

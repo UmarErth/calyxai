@@ -9,16 +9,9 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChatBubble
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialExpressiveTheme
@@ -90,14 +83,12 @@ private fun CalyxExpressiveApp(webView: WebView) {
                     NavigationDrawerItem(
                         label = { Text("Conversations") },
                         selected = true,
-                        icon = { Icon(Icons.Default.ChatBubble, null) },
                         onClick = { scope.launch { drawerState.close() } },
                         modifier = Modifier.padding(horizontal = 12.dp),
                     )
                     NavigationDrawerItem(
                         label = { Text("New conversation") },
                         selected = false,
-                        icon = { Icon(Icons.Default.Add, null) },
                         onClick = {
                             webView.runCalyxAction("document.querySelector('[aria-label=\\\"New conversation\\\"]')?.click()")
                             scope.launch { drawerState.close() }
@@ -107,7 +98,6 @@ private fun CalyxExpressiveApp(webView: WebView) {
                     NavigationDrawerItem(
                         label = { Text("Account & personalization") },
                         selected = false,
-                        icon = { Icon(Icons.Default.AccountCircle, null) },
                         onClick = {
                             webView.runCalyxAction("document.querySelector('.user-chip,.sign-in')?.click()")
                             scope.launch { drawerState.close() }
@@ -117,7 +107,6 @@ private fun CalyxExpressiveApp(webView: WebView) {
                     NavigationDrawerItem(
                         label = { Text("Toggle appearance") },
                         selected = false,
-                        icon = { Icon(Icons.Default.Palette, null) },
                         onClick = {
                             webView.runCalyxAction("document.querySelector('.theme-toggle')?.click()")
                             scope.launch { drawerState.close() }
@@ -133,12 +122,12 @@ private fun CalyxExpressiveApp(webView: WebView) {
                         title = { Text("Calyx") },
                         navigationIcon = {
                             IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(Icons.Default.Menu, contentDescription = "Open navigation")
+                                Text("☰")
                             }
                         },
                         actions = {
                             IconButton(onClick = { webView.runCalyxAction("document.querySelector('.user-chip,.sign-in')?.click()") }) {
-                                Icon(Icons.Default.AccountCircle, contentDescription = "Account")
+                                Text("●")
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(

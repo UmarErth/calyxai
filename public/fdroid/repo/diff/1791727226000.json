@@ -1,0 +1,51 @@
+{
+  "repo": {
+    "address": "https://raw.githubusercontent.com/UmarErth/calyxai/main/public/fdroid/repo",
+    "timestamp": 1791743395000
+  },
+  "packages": {
+    "ai.calyx.app": {
+      "versions": {
+        "5adf4df87751219d1bb5cdbd80b24a274e9539ba8dfb3ef97e443326d36d9bca": null,
+        "aa45c6301bbd59f76dc4bdcd811fff0c8ca0f8cea722323680d1c013aba691b2": {
+          "added": 1791726940000,
+          "file": {
+            "name": "/ai.calyx.app_5.apk",
+            "sha256": "aa45c6301bbd59f76dc4bdcd811fff0c8ca0f8cea722323680d1c013aba691b2",
+            "size": 37264651
+          },
+          "manifest": {
+            "nativecode": [
+              "arm64-v8a",
+              "armeabi-v7a",
+              "x86",
+              "x86_64"
+            ],
+            "versionName": "0.5.0",
+            "versionCode": 5,
+            "usesSdk": {
+              "minSdkVersion": 24,
+              "targetSdkVersion": 36
+            },
+            "signer": {
+              "sha256": [
+                "894cc14771a9269c0f4f2250071f14cc35c6a72fa520a30d092e8ee483ffb450"
+              ]
+            },
+            "usesPermission": [
+              {
+                "name": "android.permission.INTERNET"
+              },
+              {
+                "name": "ai.calyx.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+              }
+            ]
+          },
+          "antiFeatures": {
+            "NonFreeNet": {}
+          }
+        }
+      }
+    }
+  }
+}

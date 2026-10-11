@@ -1158,7 +1158,7 @@ function Landing({
           </p>
         </div>
         <div className="download-grid">
-          <a href="/fdroid/repo/ai.calyx.app_5.apk">
+          <a href="https://raw.githubusercontent.com/UmarErth/calyxai/main/public/fdroid/repo/ai.calyx.app_5.apk">
             <Smartphone />
             <span>
               <strong>Android APK</strong>
@@ -1166,7 +1166,7 @@ function Landing({
             </span>
             <Download size={18} />
           </a>
-          <a href="/fdroid/repo/">
+          <a href="https://fdroid.link/#https://raw.githubusercontent.com/UmarErth/calyxai/main/public/fdroid/repo?fingerprint=9DF749C6D82AA3F26C3565003671441E3EDBD7A6518BBE63B8E87F074998513A">
             <Download />
             <span>
               <strong>F-Droid repository</strong>

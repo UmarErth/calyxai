@@ -1,11 +1,11 @@
 {
   "repo": {
-    "timestamp": 1791727222000,
+    "timestamp": 1791743391000,
     "version": 20002,
     "name": "My First F-Droid Archive Demo",
     "icon": "icon.png",
     "description": "These are the apps that have been archived from the main repo.",
-    "address": "https://calyxai.pages.dev/fdroid/archive"
+    "address": "https://raw.githubusercontent.com/UmarErth/calyxai/main/public/fdroid/archive"
   },
   "requests": {
     "install": [],
