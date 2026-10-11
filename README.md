@@ -46,6 +46,12 @@ Calyx Work uses narrow Manifest V3 permissions. It reads the active page only af
 
 The Android, Windows, and Linux clients bundle the Calyx interface as standalone applications. They connect directly to the Calyx API, use native deep links for authentication, and do not depend on loading the public website. Desktop clients do not expose Node.js, unrestricted files, shell commands, or private device APIs to interface content. External links and OAuth consent open in the device's default browser.
 
+The official signed Android build is also available through the Calyx F-Droid repository:
+
+`https://calyxai.pages.dev/fdroid/repo`
+
+Repository fingerprint: `9D F7 49 C6 D8 2A A3 F2 6C 35 65 00 36 71 44 1E 3E DB D7 A6 51 8B BE 63 B8 E8 7F 07 49 98 51 3A`
+
 ## Security
 
 Please report security concerns privately. A dedicated security contact will be published with the production support channel. Do not disclose suspected vulnerabilities in a public issue.

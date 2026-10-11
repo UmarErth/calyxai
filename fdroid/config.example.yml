@@ -1,0 +1,8 @@
+repo_url: https://calyxai.pages.dev/fdroid/repo
+repo_name: Calyx App Repository
+repo_description: Official signed Android releases from Calyx.
+repo_icon: icon.png
+archive_older: 3
+
+# The real config.yml and signing keystore are generated locally and ignored.
+# Never commit repository or APK signing passwords or private keys.

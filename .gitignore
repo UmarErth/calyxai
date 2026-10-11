@@ -8,6 +8,14 @@ supabase/functions/.env
 supabase/.temp/
 .DS_Store
 *.log
+fdroid/private/
+fdroid/.signing/
+fdroid/config.yml
+fdroid/tmp/
+fdroid/unsigned/
+fdroid/repo/
+fdroid/archive/
+fdroid/stats/
 
 # wrangler files
 .wrangler

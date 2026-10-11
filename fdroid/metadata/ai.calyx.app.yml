@@ -1,0 +1,25 @@
+Categories:
+  - Internet
+  - Writing
+License: AGPL-3.0-only
+AuthorName: Calyx
+WebSite: https://calyxai.pages.dev
+SourceCode: https://github.com/UmarErth/calyxai
+IssueTracker: https://github.com/UmarErth/calyxai/issues
+Changelog: https://github.com/UmarErth/calyxai/releases
+
+Name: Calyx
+Summary: A focused open-source AI workspace
+Description: |-
+  Calyx is an independent AI workspace for research, writing, decisions,
+  attachments, and deliberate problem solving. It includes multiple reasoning
+  profiles, customizable themes, website reading, and secure account support.
+
+  The Android client is open source. AI requests use the Calyx hosted service
+  and require network access.
+
+AntiFeatures:
+  - NonFreeNet
+
+CurrentVersion: 0.3.0
+CurrentVersionCode: 3
