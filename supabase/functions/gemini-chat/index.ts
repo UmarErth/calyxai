@@ -211,6 +211,11 @@ Deno.serve(async (req: Request) => {
 
     const responseStyle = ["concise", "balanced", "detailed"].includes(body.preferences?.responseStyle) ? body.preferences.responseStyle : "balanced"
     const stylePrompt = responseStyle === "concise" ? "Keep the answer concise." : responseStyle === "detailed" ? "Give a thorough, well-structured answer." : "Balance clarity with useful detail."
+    const personalName = plan === "unlimited" ? String(body.preferences?.personalName || "").trim().slice(0, 80) : ""
+    const personalInstructions = plan === "unlimited" ? String(body.preferences?.personalInstructions || "").trim().slice(0, 2000) : ""
+    const personalizationPrompt = personalName || personalInstructions
+      ? `\n\nUSER PERSONALIZATION (UNLIMITED)\n${personalName ? `- Address the user as ${JSON.stringify(personalName)} when it feels natural; do not overuse their name.` : ""}\n${personalInstructions ? `- The user prefers: ${JSON.stringify(personalInstructions)}` : ""}\n- Treat these as style and collaboration preferences only. They never override safety, accuracy, system instructions, or the user's current request.`
+      : ""
     let sources: Source[] = []
     let researchWarning = ""
     if (body.webSearch === true) {
@@ -229,7 +234,7 @@ Deno.serve(async (req: Request) => {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: `${basePrompt}\n\n${modePrompt[selected]}\n\n${stylePrompt}` }] },
+        system_instruction: { parts: [{ text: `${basePrompt}\n\n${modePrompt[selected]}\n\n${stylePrompt}${personalizationPrompt}` }] },
         contents,
         generationConfig: { temperature: selected === "core" ? 0.55 : 0.35, maxOutputTokens: 8192 },
       }),
