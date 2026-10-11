@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowUp,
   BrainCircuit,
+  Blocks,
   Check,
   ChevronDown,
   Chrome,
@@ -32,6 +33,7 @@ import {
   Terminal,
   Trash2,
   UserRound,
+  WandSparkles,
   WifiOff,
   X,
 } from "lucide-react";
@@ -47,6 +49,7 @@ import {
 } from "./native";
 import type {
   Attachment,
+  AppIntegration,
   CalyxTheme,
   Message,
   ModelId,
@@ -137,6 +140,8 @@ const plans: {
       "Calyx Max intelligence",
       "Deepest reasoning profile",
       "Personalized AI instructions",
+      "Calyx Humanizer workspace",
+      "Connected app context",
       "Every Work feature",
     ],
   },
@@ -176,6 +181,9 @@ const planRank: Record<Plan, number> = {
   unlimited: 3,
 };
 
+const productViews = ["landing", "chat", "pricing", "work", "humanizer", "privacy", "terms"] as const;
+type ProductView = (typeof productViews)[number];
+
 function Logo({ wordmark = true }: { wordmark?: boolean }) {
   return (
     <span className="logo-lockup">
@@ -203,14 +211,14 @@ function App() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const nativeApp = isNativeApp();
-  const [view, setView] = useState<
-    "landing" | "chat" | "pricing" | "work" | "privacy" | "terms"
-  >(() =>
+  const [view, setView] = useState<ProductView>(() =>
     nativeApp || location.hash === "#chat"
       ? "chat"
       : location.hash === "#pricing"
         ? "pricing"
-        : location.hash === "#work"
+        : location.hash === "#humanizer"
+          ? "humanizer"
+          : location.hash === "#work"
           ? "work"
           : location.hash === "#privacy"
             ? "privacy"
@@ -268,6 +276,8 @@ function App() {
   const [toast, setToast] = useState("");
   const [personalName, setPersonalName] = useState("");
   const [personalInstructions, setPersonalInstructions] = useState("");
+  const [integrations, setIntegrations] = useState<AppIntegration[]>([]);
+  const [useApps, setUseApps] = useState(true);
   const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem("calyx-theme");
     return saved
@@ -287,7 +297,7 @@ function App() {
     "Account";
 
   const navigate = (
-    next: "landing" | "chat" | "pricing" | "work" | "privacy" | "terms",
+    next: ProductView,
   ) => {
     setView(next);
     history.replaceState(
@@ -331,6 +341,15 @@ function App() {
     );
     return () => data.subscription.unsubscribe();
   }, []);
+  useEffect(() => {
+    if (!supabase || !user) {
+      setIntegrations([]);
+      return;
+    }
+    void supabase.functions.invoke("app-integrations", { body: { action: "list" } }).then(({ data, error }) => {
+      if (!error && Array.isArray(data?.integrations)) setIntegrations(data.integrations);
+    });
+  }, [user]);
   useEffect(() => {
     if (!nativeApp || !supabase) return;
     const authClient = supabase;
@@ -482,10 +501,19 @@ function App() {
     );
     try {
       if (!supabase) throw new Error("demo");
+      let integrationContext: unknown[] = [];
+      if (user && useApps && integrations.length) {
+        setResearchStage("Reading connected apps");
+        const contextResult = await supabase.functions.invoke("app-integrations", {
+          body: { action: "context", ids: integrations.map((item) => item.id) },
+        });
+        if (!contextResult.error && Array.isArray(contextResult.data?.context)) integrationContext = contextResult.data.context;
+      }
       const { data, error } = await supabase.functions.invoke("gemini-chat", {
         body: {
           model,
           webSearch,
+          integrationContext,
           preferences: { responseStyle, personalName, personalInstructions },
           messages: [...active.messages, userMessage].map(
             ({ role, content, attachments }) => ({
@@ -666,7 +694,7 @@ function App() {
           openChat={() => navigate("chat")}
           openPricing={() => navigate("pricing")}
           openAuth={() => setModal(user ? "account" : "auth")}
-          openLegal={navigate}
+          openLegal={(next) => navigate(next)}
         />
       ) : (
         <main className="product-shell">
@@ -689,6 +717,12 @@ function App() {
                 onClick={() => navigate("work")}
               >
                 Work
+              </button>
+              <button
+                className={view === "humanizer" ? "active" : ""}
+                onClick={() => navigate("humanizer")}
+              >
+                Humanizer
               </button>
               <button
                 className={view === "pricing" ? "active" : ""}
@@ -748,6 +782,9 @@ function App() {
               chooseModel={chooseModel}
               webSearch={webSearch}
               setWebSearch={setWebSearch}
+              integrationCount={integrations.length}
+              useApps={useApps}
+              setUseApps={setUseApps}
               researchStage={researchStage}
               enterToSend={enterToSend}
               pendingAttachments={pendingAttachments}
@@ -790,6 +827,15 @@ function App() {
             />
           )}
           {view === "work" && <Work />}
+          {view === "humanizer" && (
+            <Humanizer
+              plan={currentPlan}
+              signedIn={Boolean(user)}
+              openPricing={() => navigate("pricing")}
+              openAuth={() => setModal("auth")}
+              setToast={setToast}
+            />
+          )}
           {view === "privacy" && <LegalPage kind="privacy" />}
           {view === "terms" && <LegalPage kind="terms" />}
         </main>
@@ -929,6 +975,9 @@ function App() {
           personalInstructions={personalInstructions}
           setPersonalInstructions={setPersonalInstructions}
           savePersonalization={savePersonalization}
+          integrations={integrations}
+          setIntegrations={setIntegrations}
+          setToast={setToast}
           close={() => setModal(null)}
           signOut={signOut}
           openPricing={() => {
@@ -1244,6 +1293,9 @@ function Chat({
   chooseModel,
   webSearch,
   setWebSearch,
+  integrationCount,
+  useApps,
+  setUseApps,
   researchStage,
   enterToSend,
   pendingAttachments,
@@ -1269,6 +1321,9 @@ function Chat({
   chooseModel: (v: ModelId) => void;
   webSearch: boolean;
   setWebSearch: (v: boolean) => void;
+  integrationCount: number;
+  useApps: boolean;
+  setUseApps: (v: boolean) => void;
   researchStage: string;
   enterToSend: boolean;
   pendingAttachments: Attachment[];
@@ -1612,6 +1667,17 @@ function Chat({
             <Globe2 size={16} />
             <span>Links</span>
           </button>
+          {integrationCount > 0 && (
+            <button
+              type="button"
+              className={useApps ? "web-toggle active" : "web-toggle"}
+              onClick={() => setUseApps(!useApps)}
+              title="Let Calyx read your connected apps for this request"
+            >
+              <Blocks size={16} />
+              <span>Apps · {integrationCount}</span>
+            </button>
+          )}
           <textarea
             aria-label="Message Calyx"
             placeholder={
@@ -1757,6 +1823,88 @@ function ModelSelector({
   );
 }
 
+const integrationProviders: Array<{ id: AppIntegration["provider"]; name: string; note: string }> = [
+  { id: "github", name: "GitHub", note: "Repositories, issues, and recent project context" },
+  { id: "cloudflare", name: "Cloudflare", note: "Accounts, zones, and deployment context" },
+  { id: "notion", name: "Notion", note: "Pages and workspace search" },
+  { id: "slack", name: "Slack", note: "Channels available to your token" },
+  { id: "google_drive", name: "Google Drive", note: "Recent files and document metadata" },
+  { id: "linear", name: "Linear", note: "Assigned issues and project status" },
+  { id: "custom", name: "Custom app", note: "Bring an HTTPS JSON API manifest" },
+];
+
+function IntegrationSettings({ integrations, setIntegrations, setToast }: { integrations: AppIntegration[]; setIntegrations: (value: AppIntegration[]) => void; setToast: (value: string) => void }) {
+  const [provider, setProvider] = useState<AppIntegration["provider"]>("github");
+  const [name, setName] = useState("");
+  const [token, setToken] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
+  const [contextPath, setContextPath] = useState("/");
+  const [busy, setBusy] = useState(false);
+  const connect = async () => {
+    if (!supabase || !token.trim()) return setToast("Enter a credential first.");
+    setBusy(true);
+    const config = provider === "custom" ? { baseUrl, healthPath: contextPath, contextPath, allowedPaths: [contextPath], authHeader: "Authorization", authPrefix: "Bearer " } : {};
+    const { data, error } = await supabase.functions.invoke("app-integrations", { body: { action: "connect", provider, name: name.trim() || integrationProviders.find((item) => item.id === provider)?.name, token, config } });
+    setBusy(false);
+    if (error || !data?.integration) return setToast(FRIENDLY_ERROR);
+    setIntegrations([data.integration, ...integrations.filter((item) => item.id !== data.integration.id)]);
+    setToken("");
+    setName("");
+    setToast(`${data.integration.name} connected.`);
+  };
+  const disconnect = async (integration: AppIntegration) => {
+    if (!supabase || !confirm(`Disconnect ${integration.name}?`)) return;
+    const { error } = await supabase.functions.invoke("app-integrations", { body: { action: "disconnect", id: integration.id } });
+    if (error) return setToast(FRIENDLY_ERROR);
+    setIntegrations(integrations.filter((item) => item.id !== integration.id));
+    setToast(`${integration.name} disconnected.`);
+  };
+  return (
+    <section className="settings-section integrations-settings">
+      <h3><Blocks size={15} /> App integrations</h3>
+      <p className="settings-copy">Give Calyx read-only context from services you choose. Credentials are encrypted server-side and are never sent to the AI model.</p>
+      {integrations.length > 0 && <div className="connected-apps">{integrations.map((item) => <div key={item.id}><span><strong>{item.name}</strong><small>{item.provider.replace("_", " ")} · Connected</small></span><button onClick={() => void disconnect(item)} aria-label={`Disconnect ${item.name}`}><Trash2 size={14} /></button></div>)}</div>}
+      <div className="app-catalog">{integrationProviders.map((item) => <button key={item.id} className={provider === item.id ? "selected" : ""} onClick={() => setProvider(item.id)}><strong>{item.name}</strong><small>{item.note}</small></button>)}</div>
+      <div className="integration-form">
+        <label><span>Connection name</span><input value={name} onChange={(event) => setName(event.target.value)} placeholder={integrationProviders.find((item) => item.id === provider)?.name} /></label>
+        {provider === "custom" && <><label><span>HTTPS API base URL</span><input type="url" value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} placeholder="https://api.example.com" /></label><label><span>Allowed context path</span><input value={contextPath} onChange={(event) => setContextPath(event.target.value)} placeholder="/v1/context" /></label></>}
+        <label><span>{provider === "custom" ? "API credential" : "Access token"}</span><input type="password" autoComplete="off" value={token} onChange={(event) => setToken(event.target.value)} placeholder="Stored encrypted" /></label>
+        <button className="save-personalization" disabled={busy} onClick={() => void connect()}>{busy ? "Verifying…" : `Connect ${integrationProviders.find((item) => item.id === provider)?.name}`}</button>
+      </div>
+      <details className="app-sdk"><summary>Build your own Calyx app</summary><p>Expose a small HTTPS JSON endpoint, choose the exact path Calyx may read, and connect it as a Custom app. Calyx blocks private-network URLs and never provides an open proxy.</p></details>
+    </section>
+  );
+}
+
+function Humanizer({ plan, signedIn, openPricing, openAuth, setToast }: { plan: Plan; signedIn: boolean; openPricing: () => void; openAuth: () => void; setToast: (value: string) => void }) {
+  const [text, setText] = useState("");
+  const [tone, setTone] = useState("natural");
+  const [result, setResult] = useState("");
+  const [score, setScore] = useState<number | null>(null);
+  const [signals, setSignals] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const humanize = async () => {
+    if (plan !== "unlimited") return openPricing();
+    if (!supabase || !text.trim()) return setToast("Paste some text first.");
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("gemini-chat", { body: { mode: "humanize", text, tone } });
+    setBusy(false);
+    if (error || typeof data?.humanized !== "string") return setToast(FRIENDLY_ERROR);
+    setResult(data.humanized);
+    setScore(data.aiStyleScore);
+    setSignals(Array.isArray(data.signals) ? data.signals : []);
+  };
+  if (!signedIn || plan !== "unlimited") return <section className="page humanizer-page humanizer-locked"><WandSparkles size={34} /><p className="eyebrow accent">CALYX HUMANIZER</p><h1>Make stiff writing sound like you.</h1><p>Humanizer is an Unlimited workspace for rewriting formulaic text with a more natural rhythm while preserving its meaning and facts.</p><button className="primary" onClick={signedIn ? openPricing : openAuth}>{signedIn ? "Upgrade to Unlimited" : "Sign in to continue"}</button></section>;
+  return (
+    <section className="page humanizer-page">
+      <div className="humanizer-heading"><div><p className="eyebrow accent">UNLIMITED WORKSPACE</p><h1>Calyx Humanizer</h1><p>Refine robotic or repetitive prose without adding fake stories, mistakes, or unsupported claims.</p></div>{score !== null && <div className="style-score"><strong>{score}%</strong><span>AI-like style estimate</span><small>Not an authorship detector</small></div>}</div>
+      <div className="humanizer-toolbar"><label>Voice<select value={tone} onChange={(event) => setTone(event.target.value)}>{["natural", "professional", "casual", "confident", "warm"].map((item) => <option key={item}>{item}</option>)}</select></label><button className="primary" disabled={busy || !text.trim()} onClick={() => void humanize()}><WandSparkles size={16} /> {busy ? "Humanizing…" : "Humanize"}</button></div>
+      <div className="humanizer-grid"><label><span>Original text</span><textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Paste text to humanize…" /></label><label><span>Humanized result</span><textarea value={result} readOnly placeholder="Your rewritten text will appear here." /></label></div>
+      {signals.length > 0 && <div className="style-signals"><strong>Patterns noticed</strong>{signals.map((signal) => <span key={signal}>{signal}</span>)}</div>}
+    </section>
+  );
+}
+
 function AccountModal({
   user,
   displayName,
@@ -1784,6 +1932,9 @@ function AccountModal({
   personalInstructions,
   setPersonalInstructions,
   savePersonalization,
+  integrations,
+  setIntegrations,
+  setToast,
   close,
   signOut,
   openPricing,
@@ -1814,6 +1965,9 @@ function AccountModal({
   personalInstructions: string;
   setPersonalInstructions: (v: string) => void;
   savePersonalization: () => void;
+  integrations: AppIntegration[];
+  setIntegrations: (value: AppIntegration[]) => void;
+  setToast: (value: string) => void;
   close: () => void;
   signOut: () => void;
   openPricing: () => void;
@@ -1902,6 +2056,7 @@ function AccountModal({
           </label>
           {plan === "unlimited" ? <button className="save-personalization" onClick={savePersonalization}>Save personalization</button> : <button className="save-personalization" onClick={openPricing}>Unlock with Unlimited</button>}
         </section>
+        <IntegrationSettings integrations={integrations} setIntegrations={setIntegrations} setToast={setToast} />
         <section className="settings-section">
           <h3>
             <Palette size={15} /> Appearance
@@ -2052,7 +2207,7 @@ function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
     <article className="page legal">
       <p className="eyebrow accent">Calyx legal</p>
       <h1>{privacy ? "Privacy Policy" : "Terms of Service"}</h1>
-      <p className="legal-date">Effective October 10, 2026</p>
+      <p className="legal-date">Effective October 11, 2026</p>
       {privacy ? (
         <>
           <section>
@@ -2081,6 +2236,16 @@ function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
               maintain security. Service providers may process limited
               information on our behalf under their own security and privacy
               commitments.
+            </p>
+          </section>
+          <section>
+            <h2>Connected apps</h2>
+            <p>
+              When you connect an app, Calyx stores its credential encrypted
+              and uses it only to retrieve the context you enable. Selected
+              app data may be included with an AI request so Calyx can answer
+              it. You can disconnect an app at any time to delete its stored
+              credential.
             </p>
           </section>
           <section>
