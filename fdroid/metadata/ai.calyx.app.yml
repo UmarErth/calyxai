@@ -21,5 +21,5 @@ Description: |-
 AntiFeatures:
   - NonFreeNet
 
-CurrentVersion: 0.4.0
-CurrentVersionCode: 4
+CurrentVersion: 0.5.0
+CurrentVersionCode: 5

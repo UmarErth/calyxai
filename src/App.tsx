@@ -41,7 +41,6 @@ import { supabase } from "./lib/supabase";
 import {
   authRedirectUrl,
   closeNativeOAuth,
-  isAndroidApp,
   isNativeApp,
   listenForNativeAuth,
   openNativeOAuth,
@@ -204,7 +203,6 @@ function App() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const nativeApp = isNativeApp();
-  const androidApp = isAndroidApp();
   const [view, setView] = useState<
     "landing" | "chat" | "pricing" | "work" | "privacy" | "terms"
   >(() =>
@@ -316,11 +314,7 @@ function App() {
   }, [toast]);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
-    document.documentElement.dataset.platform = androidApp
-      ? "android"
-      : nativeApp
-        ? "desktop"
-        : "web";
+    document.documentElement.dataset.platform = nativeApp ? "native" : "web";
     localStorage.setItem("calyx-theme", dark ? "dark" : "light");
   }, [dark]);
   useEffect(() => {
@@ -1159,12 +1153,12 @@ function Landing({
             Everywhere you work.
           </h2>
           <p>
-            Install the official Calyx app for your platform. Android 0.4.0 and
+            Install the official Calyx app for your platform. Android 0.5.0 and
             desktop 0.3.0 are available now.
           </p>
         </div>
         <div className="download-grid">
-          <a href="/fdroid/repo/ai.calyx.app_4.apk">
+          <a href="/fdroid/repo/ai.calyx.app_5.apk">
             <Smartphone />
             <span>
               <strong>Android APK</strong>
