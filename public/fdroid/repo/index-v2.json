@@ -1,1 +1,125 @@
-{"repo": {"name": {"en-US": "Calyx App Repository"}, "description": {"en-US": "Official signed Android releases from Calyx."}, "icon": {"en-US": {"name": "/icons/icon.png", "sha256": "9e4aa1bbf6d926b8413d012f724d99c326079113089e507f3c00f1a84b2802b0", "size": 12070}}, "address": "https://calyxai.pages.dev/fdroid/repo", "timestamp": 1791723255000, "categories": {"Internet": {"name": {"en-US": "Internet"}}, "Writing": {"name": {"en-US": "Writing"}}}}, "packages": {"ai.calyx.app": {"metadata": {"added": 1791723100000, "categories": ["Internet", "Writing"], "changelog": "https://github.com/UmarErth/calyxai/releases", "issueTracker": "https://github.com/UmarErth/calyxai/issues", "lastUpdated": 1791723100000, "license": "AGPL-3.0-only", "sourceCode": "https://github.com/UmarErth/calyxai", "webSite": "https://calyxai.pages.dev", "authorName": "Calyx", "name": {"en-US": "Calyx"}, "summary": {"en-US": "A focused open-source AI workspace"}, "description": {"en-US": "Calyx is an independent AI workspace for research, writing, decisions,\nattachments, and deliberate problem solving. It includes multiple reasoning\nprofiles, customizable themes, website reading, and secure account support.\n\nThe Android client is open source. AI requests use the Calyx hosted service\nand require network access."}, "preferredSigner": "894cc14771a9269c0f4f2250071f14cc35c6a72fa520a30d092e8ee483ffb450"}, "versions": {"66b33659397c47a97c962cf2e74fb737a21e23d5c22c38c3cc0540c403c16bfa": {"added": 1791723100000, "file": {"name": "/ai.calyx.app_3.apk", "sha256": "66b33659397c47a97c962cf2e74fb737a21e23d5c22c38c3cc0540c403c16bfa", "size": 3966434}, "manifest": {"versionName": "0.3.0", "versionCode": 3, "usesSdk": {"minSdkVersion": 24, "targetSdkVersion": 36}, "signer": {"sha256": ["894cc14771a9269c0f4f2250071f14cc35c6a72fa520a30d092e8ee483ffb450"]}, "usesPermission": [{"name": "android.permission.INTERNET"}, {"name": "ai.calyx.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"}]}, "antiFeatures": {"NonFreeNet": {}}}}}}}
+{
+  "repo": {
+    "name": {
+      "en-US": "Calyx App Repository"
+    },
+    "description": {
+      "en-US": "Official signed Android releases from Calyx."
+    },
+    "icon": {
+      "en-US": {
+        "name": "/icons/icon.png",
+        "sha256": "9e4aa1bbf6d926b8413d012f724d99c326079113089e507f3c00f1a84b2802b0",
+        "size": 12070
+      }
+    },
+    "address": "https://calyxai.pages.dev/fdroid/repo",
+    "timestamp": 1791724897000,
+    "categories": {
+      "Internet": {
+        "name": {
+          "en-US": "Internet"
+        }
+      },
+      "Writing": {
+        "name": {
+          "en-US": "Writing"
+        }
+      }
+    }
+  },
+  "packages": {
+    "ai.calyx.app": {
+      "metadata": {
+        "added": 1791723100000,
+        "categories": [
+          "Internet",
+          "Writing"
+        ],
+        "changelog": "https://github.com/UmarErth/calyxai/releases",
+        "issueTracker": "https://github.com/UmarErth/calyxai/issues",
+        "lastUpdated": 1791724893000,
+        "license": "AGPL-3.0-only",
+        "sourceCode": "https://github.com/UmarErth/calyxai",
+        "webSite": "https://calyxai.pages.dev",
+        "authorName": "Calyx",
+        "name": {
+          "en-US": "Calyx"
+        },
+        "summary": {
+          "en-US": "A focused open-source AI workspace"
+        },
+        "description": {
+          "en-US": "Calyx is an independent AI workspace for research, writing, decisions,\nattachments, and deliberate problem solving. It includes multiple reasoning\nprofiles, customizable themes, website reading, and secure account support.\n\nThe Android client is open source. AI requests use the Calyx hosted service\nand require network access."
+        },
+        "preferredSigner": "894cc14771a9269c0f4f2250071f14cc35c6a72fa520a30d092e8ee483ffb450"
+      },
+      "versions": {
+        "621803c26072e465ac0bb4acdbeda215929446374ab6f625c62affe04bc15269": {
+          "added": 1791724893000,
+          "file": {
+            "name": "/ai.calyx.app_4.apk",
+            "sha256": "621803c26072e465ac0bb4acdbeda215929446374ab6f625c62affe04bc15269",
+            "size": 7560840
+          },
+          "manifest": {
+            "versionName": "0.4.0",
+            "versionCode": 4,
+            "usesSdk": {
+              "minSdkVersion": 24,
+              "targetSdkVersion": 36
+            },
+            "signer": {
+              "sha256": [
+                "894cc14771a9269c0f4f2250071f14cc35c6a72fa520a30d092e8ee483ffb450"
+              ]
+            },
+            "usesPermission": [
+              {
+                "name": "android.permission.INTERNET"
+              },
+              {
+                "name": "ai.calyx.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+              }
+            ]
+          },
+          "antiFeatures": {
+            "NonFreeNet": {}
+          }
+        },
+        "66b33659397c47a97c962cf2e74fb737a21e23d5c22c38c3cc0540c403c16bfa": {
+          "added": 1791723100000,
+          "file": {
+            "name": "/ai.calyx.app_3.apk",
+            "sha256": "66b33659397c47a97c962cf2e74fb737a21e23d5c22c38c3cc0540c403c16bfa",
+            "size": 3966434
+          },
+          "manifest": {
+            "versionName": "0.3.0",
+            "versionCode": 3,
+            "usesSdk": {
+              "minSdkVersion": 24,
+              "targetSdkVersion": 36
+            },
+            "signer": {
+              "sha256": [
+                "894cc14771a9269c0f4f2250071f14cc35c6a72fa520a30d092e8ee483ffb450"
+              ]
+            },
+            "usesPermission": [
+              {
+                "name": "android.permission.INTERNET"
+              },
+              {
+                "name": "ai.calyx.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+              }
+            ]
+          },
+          "antiFeatures": {
+            "NonFreeNet": {}
+          }
+        }
+      }
+    }
+  }
+}

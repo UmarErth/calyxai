@@ -1159,12 +1159,12 @@ function Landing({
             Everywhere you work.
           </h2>
           <p>
-            Install the official Calyx app for your platform. Version 0.3.0 is
-            available now.
+            Install the official Calyx app for your platform. Android 0.4.0 and
+            desktop 0.3.0 are available now.
           </p>
         </div>
         <div className="download-grid">
-          <a href="/fdroid/repo/ai.calyx.app_3.apk">
+          <a href="/fdroid/repo/ai.calyx.app_4.apk">
             <Smartphone />
             <span>
               <strong>Android APK</strong>
