@@ -7,4 +7,4 @@ export interface ResearchSource { title: string; url: string; status: string }
 export interface Attachment { id: string; name: string; type: string; size: number; data?: string; preview?: string }
 export interface Message { id: string; role: Role; content: string; createdAt: string; attachments?: Attachment[]; sources?: ResearchSource[]; reasoningSummary?: string }
 export interface Thread { id: string; title: string; messages: Message[]; imageMode?: boolean; imageTurnsRemaining?: number }
-export interface AppIntegration { id: string; provider: 'github' | 'cloudflare' | 'notion' | 'slack' | 'google_drive' | 'linear' | 'custom'; name: string; config?: Record<string, unknown>; created_at?: string; updated_at?: string }
+export interface AppIntegration { id: string; provider: 'github' | 'cloudflare' | 'notion' | 'slack' | 'google_drive' | 'linear' | 'mcp' | 'custom'; name: string; config?: Record<string, unknown>; created_at?: string; updated_at?: string }

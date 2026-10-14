@@ -6,7 +6,7 @@ const cors = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type Provider = "github" | "cloudflare" | "notion" | "slack" | "google_drive" | "linear" | "custom";
+type Provider = "github" | "cloudflare" | "notion" | "slack" | "google_drive" | "linear" | "mcp" | "custom";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -81,6 +81,42 @@ async function providerFetch(provider: Provider, token: string, config: Record<s
   return payload;
 }
 
+type McpTool = { name: string; description?: string; inputSchema?: Record<string, unknown> };
+
+async function mcpRequest(endpoint: URL, token: string, method: string, params: Record<string, unknown>, sessionId?: string) {
+  const headers: Record<string, string> = {
+    Accept: "application/json, text/event-stream",
+    "Content-Type": "application/json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (sessionId) headers["Mcp-Session-Id"] = sessionId;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ jsonrpc: "2.0", id: crypto.randomUUID(), method, params }),
+    signal: AbortSignal.timeout(12000),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload || payload.error) throw new Error("The MCP server did not accept this connection");
+  return { result: payload.result as Record<string, unknown>, sessionId: response.headers.get("mcp-session-id") || undefined };
+}
+
+async function discoverMcp(config: Record<string, unknown>, token: string) {
+  const endpoint = safeCustomUrl(String(config.endpoint || ""));
+  const initialized = await mcpRequest(endpoint, token, "initialize", {
+    protocolVersion: "2025-03-26",
+    capabilities: {},
+    clientInfo: { name: "Calyx", version: "1.0" },
+  });
+  const tools = await mcpRequest(endpoint, token, "tools/list", {}, initialized.sessionId);
+  const discovered = Array.isArray(tools.result?.tools) ? tools.result.tools : [];
+  return discovered.slice(0, 100).flatMap((item): McpTool[] => {
+    if (!item || typeof item !== "object" || typeof (item as McpTool).name !== "string") return [];
+    const tool = item as McpTool;
+    return [{ name: tool.name.slice(0, 120), description: typeof tool.description === "string" ? tool.description.slice(0, 500) : undefined, inputSchema: tool.inputSchema && typeof tool.inputSchema === "object" ? tool.inputSchema : undefined }];
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
@@ -104,14 +140,19 @@ Deno.serve(async (req: Request) => {
 
     if (action === "connect") {
       const provider = String(body.provider || "") as Provider;
-      const supported: Provider[] = ["github", "cloudflare", "notion", "slack", "google_drive", "linear", "custom"];
+      const supported: Provider[] = ["github", "cloudflare", "notion", "slack", "google_drive", "linear", "mcp", "custom"];
       if (!supported.includes(provider)) return json({ error: "Unsupported provider" }, 400);
       const token = String(body.token || "").trim();
       const name = String(body.name || provider).trim().slice(0, 80);
       const config = typeof body.config === "object" && body.config ? body.config as Record<string, unknown> : {};
-      if (token.length < 8) return json({ error: "A valid credential is required" }, 400);
+      if (provider !== "mcp" && token.length < 8) return json({ error: "A valid credential is required" }, 400);
       if (provider === "custom") safeCustomUrl(String(config.baseUrl || ""));
-      await providerFetch(provider, token, config, "verify");
+      if (provider === "mcp") {
+        const tools = await discoverMcp(config, token);
+        config.tools = tools;
+      } else {
+        await providerFetch(provider, token, config, "verify");
+      }
       const secret = await encrypt(token);
       const { data, error } = await admin.from("user_integrations").upsert({ user_id: user.id, provider, name, encrypted_secret: secret.encrypted, secret_iv: secret.iv, config, updated_at: new Date().toISOString() }, { onConflict: "user_id,provider,name" }).select("id,provider,name,config,created_at,updated_at").single();
       if (error) throw error;
@@ -134,6 +175,10 @@ Deno.serve(async (req: Request) => {
       const results = [];
       for (const item of data || []) {
         try {
+          if (item.provider === "mcp") {
+            results.push({ id: item.id, provider: item.provider, name: item.name, data: { tools: Array.isArray(item.config?.tools) ? item.config.tools : [], note: "MCP tools require explicit user approval before they can run." } });
+            continue;
+          }
           const token = await decrypt(item.encrypted_secret, item.secret_iv);
           results.push({ id: item.id, provider: item.provider, name: item.name, data: await providerFetch(item.provider as Provider, token, item.config || {}, "context") });
         } catch {

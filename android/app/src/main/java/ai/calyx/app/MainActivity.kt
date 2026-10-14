@@ -83,7 +83,10 @@ private fun CalyxExpressiveApp(webView: WebView) {
                     NavigationDrawerItem(
                         label = { Text("Conversations") },
                         selected = true,
-                        onClick = { scope.launch { drawerState.close() } },
+                        onClick = {
+                            webView.runCalyxAction("document.querySelector('.mobile-menu-button')?.click()")
+                            scope.launch { drawerState.close() }
+                        },
                         modifier = Modifier.padding(horizontal = 12.dp),
                     )
                     NavigationDrawerItem(

@@ -1342,6 +1342,10 @@ function Chat({
     message?: Message;
   } | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [threadFilter, setThreadFilter] = useState("");
+  const visibleThreads = threads.filter((thread) =>
+    thread.title.toLocaleLowerCase().includes(threadFilter.trim().toLocaleLowerCase()),
+  );
   const addFiles = async (files: FileList | null) => {
     if (!files) return;
     const selected = Array.from(files).slice(0, 4);
@@ -1411,8 +1415,11 @@ function Chat({
           drawerOpen ? "conversation-rail mobile-open" : "conversation-rail"
         }
       >
-        <div>
-          <p>Conversations</p>
+        <div className="conversation-heading">
+          <span>
+            <p>Conversations</p>
+            <small>{threads.length} saved</small>
+          </span>
           <span className="rail-actions">
             <button onClick={newThread} aria-label="New conversation">
               <SquarePen size={16} />
@@ -1426,7 +1433,20 @@ function Chat({
             </button>
           </span>
         </div>
-        {threads.map((thread, index) => (
+        <button className="new-conversation" onClick={newThread}>
+          <SquarePen size={15} /> New conversation
+        </button>
+        <label className="conversation-filter">
+          <Search size={14} />
+          <input
+            value={threadFilter}
+            onChange={(event) => setThreadFilter(event.target.value)}
+            placeholder="Search conversations"
+            aria-label="Search conversations"
+          />
+        </label>
+        <div className="conversation-list">
+        {visibleThreads.map((thread) => (
           <div
             className={
               thread.id === activeId ? "thread-row active" : "thread-row"
@@ -1439,7 +1459,7 @@ function Chat({
                 setDrawerOpen(false);
               }}
             >
-              <span>{String(index + 1).padStart(2, "0")}</span>
+              <span>{thread.messages.length} msg</span>
               <strong>{thread.title}</strong>
             </button>
             <button
@@ -1451,6 +1471,8 @@ function Chat({
             </button>
           </div>
         ))}
+        {!visibleThreads.length && <p className="conversation-empty">No conversations found.</p>}
+        </div>
         <div className="mobile-drawer-tools">
           <button onClick={openAccount}>
             <UserRound size={17} /> Account & personalization
@@ -1830,6 +1852,7 @@ const integrationProviders: Array<{ id: AppIntegration["provider"]; name: string
   { id: "slack", name: "Slack", note: "Channels available to your token" },
   { id: "google_drive", name: "Google Drive", note: "Recent files and document metadata" },
   { id: "linear", name: "Linear", note: "Assigned issues and project status" },
+  { id: "mcp", name: "MCP server", note: "Connect a remote Streamable HTTP tool server" },
   { id: "custom", name: "Custom app", note: "Bring an HTTPS JSON API manifest" },
 ];
 
@@ -1843,7 +1866,9 @@ function IntegrationSettings({ integrations, setIntegrations, setToast }: { inte
   const connect = async () => {
     if (!supabase || !token.trim()) return setToast("Enter a credential first.");
     setBusy(true);
-    const config = provider === "custom" ? { baseUrl, healthPath: contextPath, contextPath, allowedPaths: [contextPath], authHeader: "Authorization", authPrefix: "Bearer " } : {};
+    const config = provider === "custom"
+      ? { baseUrl, healthPath: contextPath, contextPath, allowedPaths: [contextPath], authHeader: "Authorization", authPrefix: "Bearer " }
+      : provider === "mcp" ? { endpoint: baseUrl } : {};
     const { data, error } = await supabase.functions.invoke("app-integrations", { body: { action: "connect", provider, name: name.trim() || integrationProviders.find((item) => item.id === provider)?.name, token, config } });
     setBusy(false);
     if (error || !data?.integration) return setToast(FRIENDLY_ERROR);
@@ -1863,15 +1888,16 @@ function IntegrationSettings({ integrations, setIntegrations, setToast }: { inte
     <section className="settings-section integrations-settings">
       <h3><Blocks size={15} /> App integrations</h3>
       <p className="settings-copy">Give Calyx read-only context from services you choose. Credentials are encrypted server-side and are never sent to the AI model.</p>
-      {integrations.length > 0 && <div className="connected-apps">{integrations.map((item) => <div key={item.id}><span><strong>{item.name}</strong><small>{item.provider.replace("_", " ")} · Connected</small></span><button onClick={() => void disconnect(item)} aria-label={`Disconnect ${item.name}`}><Trash2 size={14} /></button></div>)}</div>}
+      {integrations.length > 0 && <div className="connected-apps">{integrations.map((item) => <div key={item.id}><span><strong>{item.name}</strong><small>{item.provider === "mcp" ? `${Array.isArray(item.config?.tools) ? item.config.tools.length : 0} tools discovered · approval required` : `${item.provider.replace("_", " ")} · Connected`}</small></span><button onClick={() => void disconnect(item)} aria-label={`Disconnect ${item.name}`}><Trash2 size={14} /></button></div>)}</div>}
       <div className="app-catalog">{integrationProviders.map((item) => <button key={item.id} className={provider === item.id ? "selected" : ""} onClick={() => setProvider(item.id)}><strong>{item.name}</strong><small>{item.note}</small></button>)}</div>
       <div className="integration-form">
         <label><span>Connection name</span><input value={name} onChange={(event) => setName(event.target.value)} placeholder={integrationProviders.find((item) => item.id === provider)?.name} /></label>
         {provider === "custom" && <><label><span>HTTPS API base URL</span><input type="url" value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} placeholder="https://api.example.com" /></label><label><span>Allowed context path</span><input value={contextPath} onChange={(event) => setContextPath(event.target.value)} placeholder="/v1/context" /></label></>}
-        <label><span>{provider === "custom" ? "API credential" : "Access token"}</span><input type="password" autoComplete="off" value={token} onChange={(event) => setToken(event.target.value)} placeholder="Stored encrypted" /></label>
+        {provider === "mcp" && <label><span>Streamable HTTP endpoint</span><input type="url" value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} placeholder="https://mcp.example.com/mcp" /></label>}
+        <label><span>{provider === "custom" ? "API credential" : provider === "mcp" ? "Bearer token (optional)" : "Access token"}</span><input type="password" autoComplete="off" value={token} onChange={(event) => setToken(event.target.value)} placeholder={provider === "mcp" ? "Leave blank if the server is public" : "Stored encrypted"} /></label>
         <button className="save-personalization" disabled={busy} onClick={() => void connect()}>{busy ? "Verifying…" : `Connect ${integrationProviders.find((item) => item.id === provider)?.name}`}</button>
       </div>
-      <details className="app-sdk"><summary>Build your own Calyx app</summary><p>Expose a small HTTPS JSON endpoint, choose the exact path Calyx may read, and connect it as a Custom app. Calyx blocks private-network URLs and never provides an open proxy.</p></details>
+      <details className="app-sdk"><summary>About MCP connections</summary><p>Calyx discovers the tools exposed by a remote Streamable HTTP MCP server over HTTPS. It blocks local and private-network URLs, stores any bearer token encrypted, and never runs MCP tools automatically—each future tool action will require your approval.</p></details>
     </section>
   );
 }
